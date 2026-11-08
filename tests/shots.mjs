@@ -1,5 +1,5 @@
 // Tira prints do app em celular (Safari/WebKit e Chrome) e desktop, e lista erros do console.
-// Uso: node tests/shots.mjs http://localhost:4173/calc-3d/ <pasta-de-saída>
+// Uso: node tests/shots.mjs http://localhost:4173/calculadora/ <pasta-de-saída>
 import { chromium, webkit, devices } from "@playwright/test";
 
 const url = process.argv[2];

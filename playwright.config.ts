@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [["list"]],
   use: {
-    baseURL: process.env.BASE_URL || "http://localhost:4173/calc-3d/",
+    baseURL: process.env.BASE_URL || "http://localhost:4173/calculadora/",
     locale: "pt-BR",
     acceptDownloads: true,
     screenshot: "only-on-failure",

@@ -191,10 +191,10 @@ export default function App() {
   const footer = (
     <footer className="mt-16 flex lg:mt-12 lg:pb-4 flex-col items-center gap-5 border-t border-line pt-8 text-center">
       <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14.5px] font-medium text-ink-2" aria-label="Outros projetos">
-        <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.github.io/site/" target="_blank" rel="noopener noreferrer">
+        <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.com.br/" target="_blank" rel="noopener noreferrer">
           Nosso site <ArrowUpRight size={14} aria-hidden="true" />
         </a>
-        <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.github.io/catalogo/" target="_blank" rel="noopener noreferrer">
+        <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.com.br/catalogo/" target="_blank" rel="noopener noreferrer">
           Catálogo <ArrowUpRight size={14} aria-hidden="true" />
         </a>
         <a className="inline-flex min-h-[40px] items-center gap-1.5 hover:text-ink" href={`https://www.instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">

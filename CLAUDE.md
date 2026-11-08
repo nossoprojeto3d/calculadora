@@ -1,6 +1,6 @@
 # Calculadora 3D (calc-3d)
 
-Calculadora de preço para impressão 3D, publicada no GitHub Pages: https://nossoprojeto3d.github.io/calc-3d/
+Calculadora de preço para impressão 3D, publicada no GitHub Pages: https://nossoprojeto3d.com.br/calculadora/ (repositório `calculadora`; o antigo `/calc-3d/` redireciona pelo site principal)
 Todo push na `main` vai direto pro ar: o GitHub Actions (`.github/workflows/publicar.yml`) roda os testes do cálculo, gera o build e publica. Instalável como PWA.
 
 Stack (V4): Vite + React + TypeScript + Tailwind v4, Motion (animações), Vaul (gavetas), Radix (diálogo e interruptor), Phosphor (ícones), jsPDF (npm). Libs e frameworks gratuitos podem entrar.
@@ -10,7 +10,7 @@ O README.md explica a fórmula de preço e onde ficam os dados. Leia-o antes de 
 ## Comandos
 
 - `npm run dev`: servidor local com recarga ao vivo (também abre no celular pela rede).
-- `npm run build` e `npm run preview`: build de produção, com a CSP ligada, em http://localhost:4173/calc-3d/.
+- `npm run build` e `npm run preview`: build de produção, com a CSP ligada, em http://localhost:4173/calculadora/.
 - `npm test`: testes do cálculo (`tests/unit`).
 - `npm run test:e2e`: roteiro de teste no iPhone (Safari/WebKit), Android (Chrome) e desktop. Precisa do `preview` rodando.
 - `npm run paridade`: compara o motor com a V3 original em 2.000 cenários. Precisa da V3 servida em http://localhost:8765 (ver README).

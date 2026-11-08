@@ -29,8 +29,8 @@ const cspPlugin = (): Plugin => ({
 });
 
 export default defineConfig({
-  // publicado em https://nossoprojeto3d.github.io/calc-3d/
-  base: "/calc-3d/",
+  // publicado em https://nossoprojeto3d.com.br/calculadora/
+  base: "/calculadora/",
   plugins: [
     react(),
     tailwindcss(),

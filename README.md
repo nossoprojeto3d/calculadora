@@ -4,7 +4,7 @@ Calculadora gratuita de preço para impressão 3D (filamento): material, energia
 desgaste da máquina, mão de obra, embalagem, taxas da Shopee e do Mercado Livre,
 frete, impostos e lucro. Gera o orçamento pronto para o WhatsApp e em PDF.
 
-Publicada em **https://nossoprojeto3d.github.io/calc-3d/**. Funciona sem servidor:
+Publicada em **https://nossoprojeto3d.com.br/calculadora/**. Funciona sem servidor:
 tudo fica no aparelho de quem usa.
 
 V4: Vite + React + TypeScript + Tailwind v4, com identidade própria
@@ -16,9 +16,9 @@ V4: Vite + React + TypeScript + Tailwind v4, com identidade própria
 
 ```
 npm install
-npm run dev        # http://localhost:5173/calc-3d/ (e no celular, pelo IP da rede)
+npm run dev        # http://localhost:5173/calculadora/ (e no celular, pelo IP da rede)
 npm run build      # gera a pasta dist/
-npm run preview    # serve o dist/ em http://localhost:4173/calc-3d/ (com a CSP ligada)
+npm run preview    # serve o dist/ em http://localhost:4173/calculadora/ (com a CSP ligada)
 ```
 
 ## Estrutura

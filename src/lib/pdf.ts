@@ -58,7 +58,7 @@ function imageSize(dataUrl: string) {
 
 const MARGIN_X = 18;
 const CREDIT = "Orçamento feito com a calculadora Nosso Projeto 3D";
-const CREDIT_URL = "https://nossoprojeto3d.github.io/calc-3d/";
+const CREDIT_URL = "https://nossoprojeto3d.com.br/calculadora/";
 
 async function createPdf(header: { title: string; subtitle: string; logo: string | null; logoOnTile?: boolean }) {
   const { jsPDF } = await import("jspdf");
