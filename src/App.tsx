@@ -19,6 +19,7 @@ import { InputField, Section, Switch, useIsDesktop } from "./components/ui";
 import { MaterialPicker, PrinterPicker } from "./components/Pickers";
 import { ProCosts } from "./components/ProCosts";
 import { ResultPanel } from "./components/ResultPanel";
+import { Parceiro } from "./components/Parceiro";
 import { HistorySheet } from "./components/HistorySheet";
 import { SettingsSheet } from "./components/SettingsSheet";
 import { IosInstallDialog, QuickToast, SupportDialog } from "./components/Overlays";
@@ -398,6 +399,7 @@ export default function App() {
           <aside className="min-w-0 lg:sticky lg:top-[76px] lg:flex lg:h-[calc(100dvh-92px)] lg:flex-col lg:justify-center lg:gap-3 lg:self-start">
             {desktop && <ModeSwitch mode={state.mode} onChange={calc.setMode} compact />}
             <ResultPanel calc={calc} onJumpTo={jumpTo} onOpenSettings={() => setSettingsOpen(true)} />
+            <Parceiro />
             <p className="hint rp-hide2 mt-3 px-2 text-center lg:mt-0 lg:text-[12.5px]">Tudo fica salvo só no seu aparelho. Nada é enviado pra lugar nenhum.</p>
           </aside>
         </div>
