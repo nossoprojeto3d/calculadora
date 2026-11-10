@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { DownloadSimple, ImageSquare, Monitor, Moon, Sun, Trash } from "@phosphor-icons/react";
 import { readLogoFile } from "../lib/storage";
 import { PRINTERS } from "../lib/data";
-import { defaultStoreSettings, sanitizeDecimal, type StoreSettings } from "../lib/calc";
+import { MOEDAS, defaultStoreSettings, sanitizeDecimal, simboloMoeda, type StoreSettings } from "../lib/calc";
 import type { Calculator } from "../lib/useCalculator";
 import { InputField, Sheet, Switch } from "./ui";
 import type { Theme } from "../App";
@@ -79,6 +79,19 @@ export function SettingsSheet({ calc, open, onOpenChange, theme, onTheme, canIns
         <section className="flex flex-col gap-4">
           <h3 className="text-[15px] font-semibold">Padrões da calculadora</h3>
           <div className="flex flex-col gap-2">
+            <span id="settingsCurrencyLabel" className="label">Moeda</span>
+            <div className="grid grid-cols-3 gap-1 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
+              role="radiogroup" aria-labelledby="settingsCurrencyLabel">
+              {MOEDAS.map((m) => (
+                <button key={m.id} type="button" role="radio" aria-checked={draft.currency === m.id} onClick={() => set("currency", m.id)}
+                  className={`inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-full text-[14px] font-medium transition-colors ${draft.currency === m.id ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink"}`}>
+                  <span className="num text-[13px] opacity-70">{m.simbolo}</span>{m.nome}
+                </button>
+              ))}
+            </div>
+            <p className="hint">Muda o símbolo nos valores, no WhatsApp e no PDF. Não converte: digite os preços na moeda escolhida.</p>
+          </div>
+          <div className="flex flex-col gap-2">
             <label htmlFor="settingsDefaultPrinter" className="label">Impressora padrão</label>
             <div className="field-box">
               <select id="settingsDefaultPrinter" value={draft.defaultPrinter} onChange={(e) => set("defaultPrinter", e.target.value)}
@@ -93,9 +106,9 @@ export function SettingsSheet({ calc, open, onOpenChange, theme, onTheme, canIns
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <InputField id="settingsKwh" label="Valor do kWh" prefix="R$" placeholder="0,85" value={draft.kwhPrice} onChange={dec("kwhPrice")} />
+            <InputField id="settingsKwh" label="Valor do kWh" prefix={simboloMoeda(draft.currency)} placeholder="0,85" value={draft.kwhPrice} onChange={dec("kwhPrice")} />
             <InputField id="settingsMarginPct" label="Margem de lucro" suffix="%" placeholder="100" value={draft.marginPct} onChange={dec("marginPct")} />
-            <InputField id="settingsHourlyRate" label="Seu valor-hora" prefix="R$" placeholder="25,00" value={draft.hourlyRate} onChange={dec("hourlyRate")}
+            <InputField id="settingsHourlyRate" label="Seu valor-hora" prefix={simboloMoeda(draft.currency)} placeholder="25,00" value={draft.hourlyRate} onChange={dec("hourlyRate")}
               hint="Calcula a mão de obra." />
             <InputField id="settingsFailurePct" label="Margem de falha" suffix="%" placeholder="10" value={draft.failurePct} onChange={dec("failurePct")}
               hint="Quando ligada no Profissional." />

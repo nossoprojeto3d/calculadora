@@ -12,7 +12,7 @@ import {
   CaretDown, ImageSquare, Minus, Play, Plus, Printer, Timer, Trash, TrendUp, UserCircle, X,
 } from "@phosphor-icons/react";
 import { CUSTOM_PRINTER_ID } from "./lib/data";
-import { PLATE_QTY_MAX, brl, formatDuration, formatGrams, getPlateQty } from "./lib/calc";
+import { PLATE_QTY_MAX, brl, formatDuration, formatGrams, getPlateQty, moedaAtiva, simboloMoeda } from "./lib/calc";
 import { KEYS, read, readPhotoFile, track, write } from "./lib/storage";
 import { useCalculator } from "./lib/useCalculator";
 import { InputField, Section, Switch, useIsDesktop } from "./components/ui";
@@ -297,16 +297,16 @@ export default function App() {
                     <div className="grid grid-cols-2 gap-3 rounded-2xl bg-surface-2 p-3" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
                       <InputField id="customPrinterPower" label="Potência" suffix="W" kind="numeric" placeholder="350"
                         value={str("customPrinterPower")} onChange={(x) => set("customPrinterPower", x)} error={err("customPrinterPower")} />
-                      <InputField id="customPrinterPrice" label={<>Quanto custou <span className="optional">opcional</span></>} prefix="R$" placeholder="3.000"
+                      <InputField id="customPrinterPrice" label={<>Quanto custou <span className="optional">opcional</span></>} prefix={simboloMoeda()} placeholder="3.000"
                         value={str("customPrinterPrice")} onChange={(x) => set("customPrinterPrice", x)} />
                       <p className="hint col-span-2">A potência está na etiqueta da fonte ou no site do fabricante. O preço serve pro desgaste, no Profissional.</p>
                     </div>
                   </m.div>
                 )}
               </AnimatePresence>
-              <InputField id="kwhPrice" label="Valor do kWh da sua energia" prefix="R$" suffix="/kWh" placeholder="0,85"
+              <InputField id="kwhPrice" label="Valor do kWh da sua energia" prefix={simboloMoeda()} suffix="/kWh" placeholder="0,85"
                 value={str("kwhPrice")} onChange={(x) => set("kwhPrice", x)} error={err("kwhPrice")}
-                hint="Está na sua conta de luz. Média no Brasil: R$ 0,85." />
+                hint={moedaAtiva() === "BRL" ? "Está na sua conta de luz. Média no Brasil: R$ 0,85." : "Está na sua conta de luz."} />
             </Section>
 
             <Section id="secao-filamento" icon={<Cylinder size={19} />} title="Filamento">
@@ -315,9 +315,9 @@ export default function App() {
                 <InputField id="customMaterialName" kind="text" label="Nome do material" placeholder="Ex: PA-CF, PC Blend, PP"
                   value={str("customMaterialName")} onChange={(x) => set("customMaterialName", x)} error={err("customMaterialName")} />
               )}
-              <InputField id="pricePerKg" label="Preço do filamento" prefix="R$" suffix="/kg" placeholder="109,90"
+              <InputField id="pricePerKg" label="Preço do filamento" prefix={simboloMoeda()} suffix="/kg" placeholder="109,90"
                 value={str("pricePerKg")} onChange={(x) => set("pricePerKg", x)} error={err("pricePerKg")}
-                hint="Vem com a média do mercado. Ajuste pro que você pagou." />
+                hint={moedaAtiva() === "BRL" ? "Vem com a média do mercado. Ajuste pro que você pagou." : "Quanto você pagou no rolo de 1 kg."} />
             </Section>
 
             <Section id="secao-peca" icon={<Timer size={19} />} title="A peça">
@@ -364,7 +364,7 @@ export default function App() {
               <div className="grid grid-cols-2 gap-3">
                 <InputField id="marginPct" label="Margem em %" suffix="%" placeholder="100" disabled={fixedFilled}
                   value={str("marginPct")} onChange={(x) => set("marginPct", x)} error={state.errors.includes("margin") ? " " : null} />
-                <InputField id="marginFixed" label="Ou valor fixo" prefix="R$" placeholder="15,00" disabled={pctFilled}
+                <InputField id="marginFixed" label="Ou valor fixo" prefix={simboloMoeda()} placeholder="15,00" disabled={pctFilled}
                   value={str("marginFixed")} onChange={(x) => set("marginFixed", x)} error={state.errors.includes("margin") ? " " : null} />
               </div>
               {err("margin")
@@ -374,7 +374,7 @@ export default function App() {
               <label className="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-2xl bg-surface-2 px-4" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
                 <span className="flex-1">
                   <span className="block text-[15px] font-medium">{v.roundToggle ? "Arredondar para ,99 acima" : "Sem arredondamento"}</span>
-                  <span className="block text-[13px] text-ink-3">Ex.: R$ 45,24 vira R$ 45,99</span>
+                  <span className="block text-[13px] text-ink-3">Ex.: {brl(45.24)} vira {brl(45.99)}</span>
                 </span>
                 <Switch id="roundToggle" checked={v.roundToggle === true} onChange={(x) => set("roundToggle", x)} label="Arredondar para ,99" />
               </label>

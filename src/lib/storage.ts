@@ -4,7 +4,7 @@
    tema e modo. Nada vai para servidor.
    ========================================================= */
 
-import { defaultStoreSettings, formatPrintTime, type CalcResult, type Mode, type StoreSettings } from "./calc";
+import { defaultStoreSettings, formatPrintTime, moedaAtiva, type CalcResult, type Moeda, type Mode, type StoreSettings } from "./calc";
 import type { SavedFormState } from "./form";
 
 export const KEYS = {
@@ -112,6 +112,8 @@ export interface SavedBudget {
   proMode: boolean;
   /** nome do cliente, se informado */
   client?: string;
+  /** moeda em que foi salvo (orçamentos antigos não têm: Real) */
+  moeda?: Moeda;
   state: SavedFormState;
 }
 
@@ -138,6 +140,7 @@ export function budgetEntry(id: string, r: CalcResult, state: SavedFormState): S
     qty: r.quantity > 1 ? r.quantity : undefined,
     proMode: r.proMode,
     client: String(state.values.clientName ?? "").trim() || undefined,
+    moeda: moedaAtiva() === "BRL" ? undefined : moedaAtiva(),
     state,
   };
 }

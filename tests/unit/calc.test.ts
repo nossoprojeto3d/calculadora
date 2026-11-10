@@ -2,8 +2,8 @@
 // "v3-amostra.json" guarda cenários e resultados gravados da V3 original
 // (gerados por tests/parity); o motor novo precisa dar exatamente o mesmo.
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-import { calculate, defaultStoreSettings, sanitizeDecimal, smartRoundUp, whatsAppHref, type StoreSettings } from "../../src/lib/calc";
+import { afterEach, describe, expect, it } from "vitest";
+import { brl, calculate, defaultStoreSettings, moedaAtiva, sanitizeDecimal, simboloMoeda, smartRoundUp, usarMoeda, whatsAppHref, type StoreSettings } from "../../src/lib/calc";
 import { formReducer, initialFormState, type FormAction, type FormState } from "../../src/lib/form";
 import { buildClientWhatsAppText, getClientDetails } from "../../src/lib/cliente";
 
@@ -232,5 +232,40 @@ describe("preço de venda próprio", () => {
     const r = calc([{ type: "set", id: "plateQty", value: "4" }, sale("12,5")]);
     expect(r.finalPrice).toBe(12.5);
     expect(r.plateTotal).toBe(50);
+  });
+});
+
+describe("moeda", () => {
+  afterEach(() => usarMoeda("BRL"));
+
+  it("formata no real por padrão e troca o símbolo para dólar e euro", () => {
+    const limpa = (s: string) => s.replace(/\s/g, " ");
+    expect(limpa(brl(45.99))).toBe("R$ 45,99");
+    usarMoeda("USD");
+    expect(limpa(brl(45.99))).toBe("US$ 45,99");
+    expect(simboloMoeda()).toBe("US$");
+    usarMoeda("EUR");
+    expect(limpa(brl(1234.5))).toBe("€ 1.234,50");
+    expect(simboloMoeda()).toBe("€");
+  });
+
+  it("valor desconhecido ou de configuração antiga volta para o real", () => {
+    usarMoeda(undefined);
+    expect(moedaAtiva()).toBe("BRL");
+    usarMoeda("JPY");
+    expect(moedaAtiva()).toBe("BRL");
+  });
+
+  it("em dólar ou euro não usa as médias em real do filamento nem das impressoras", () => {
+    const base = initialFormState(defaultStoreSettings(), "basico", {});
+    const comMaterial = (estado: FormState) => formReducer(estado, { type: "set", id: "materialSelect", value: "pla-basic" } as FormAction);
+    expect(comMaterial(base).values.pricePerKg).not.toBe("");
+    usarMoeda("EUR");
+    const emEuro = formReducer(initialFormState(defaultStoreSettings(), "basico", {}), { type: "set", id: "pricePerKg", value: "25" } as FormAction);
+    expect(comMaterial(emEuro).values.pricePerKg).toBe("25");
+  });
+
+  it("o padrão das configurações é o real", () => {
+    expect(defaultStoreSettings().currency).toBe("BRL");
   });
 });

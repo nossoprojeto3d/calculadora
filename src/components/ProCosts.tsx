@@ -4,7 +4,7 @@ import { GearSix, Warning } from "@phosphor-icons/react";
 import { PRO_COSTS, SHOPEE_TIER_OPTION_LABELS, type ProCost } from "../lib/data";
 import {
   getPlateQty, brl, computeAutoWearValue, computeMeliFee, computeShopeeFee, getEffectiveHourlyRate, getEffectiveShopeeTiers,
-  getMeliAdTypeRate, proFieldId, proToggleId,
+  getMeliAdTypeRate, proFieldId, proToggleId, simboloMoeda,
 } from "../lib/calc";
 import type { Calculator } from "../lib/useCalculator";
 import { InputField, Switch } from "./ui";
@@ -69,7 +69,7 @@ function CostBody({ cost, calc, hasError, onOpenSettings }: { cost: ProCost; cal
   if (cost.id === "wear") {
     const d = computeAutoWearValue(v);
     if (d) {
-      hint = `Estimativa: R$ ${d.printer.avgPurchasePrice.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} (preço médio) ÷ ${d.printer.avgLifespanHours.toLocaleString("pt-BR")}h (vida útil) × ${d.hours}h${String(d.minutes).padStart(2, "0")}${d.qty > 1 ? ` ÷ ${d.qty} peças` : ""} = ${brl(d.value)}${d.qty > 1 ? " por peça" : ""}. Pode editar.`;
+      hint = `Estimativa: ${simboloMoeda()} ${d.printer.avgPurchasePrice.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} (preço médio) ÷ ${d.printer.avgLifespanHours.toLocaleString("pt-BR")}h (vida útil) × ${d.hours}h${String(d.minutes).padStart(2, "0")}${d.qty > 1 ? ` ÷ ${d.qty} peças` : ""} = ${brl(d.value)}${d.qty > 1 ? " por peça" : ""}. Pode editar.`;
     } else if (v.printerSelect === "custom" && !(parseFloat(String(v.customPrinterPrice)) > 0)) {
       hint = "Pra calcular sozinho, informe quanto a impressora custou (em “Outra impressora”), ou digite o valor.";
     }
@@ -93,7 +93,7 @@ function CostBody({ cost, calc, hasError, onOpenSettings }: { cost: ProCost; cal
     );
   }
 
-  const prefix = cost.unit === "currency" ? "R$" : undefined;
+  const prefix = cost.unit === "currency" ? simboloMoeda() : undefined;
   const suffix = cost.unit === "percent" ? "%" : cost.unit === "laborMinutes" ? "min" : undefined;
 
   return (
@@ -160,7 +160,7 @@ function CustomRate({ prefix, calc, pctPlaceholder }: { prefix: "proShopee" | "p
     <div className="grid grid-cols-2 gap-3">
       <InputField id={`${prefix}CustomPct`} label="Comissão" suffix="%" placeholder={pctPlaceholder}
         value={String(state.values[`${prefix}CustomPct`] ?? "")} onChange={(x) => set(`${prefix}CustomPct`, x)} />
-      <InputField id={`${prefix}CustomFixed`} label="Valor fixo" prefix="R$" placeholder="4,00"
+      <InputField id={`${prefix}CustomFixed`} label="Valor fixo" prefix={simboloMoeda()} placeholder="4,00"
         value={String(state.values[`${prefix}CustomFixed`] ?? "")} onChange={(x) => set(`${prefix}CustomFixed`, x)} />
     </div>
   );

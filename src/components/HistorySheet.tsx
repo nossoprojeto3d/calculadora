@@ -67,7 +67,7 @@ export function HistorySheet({ calc, open, onOpenChange, onOpened }: {
                   </span>
                 </span>
                 <span className="num shrink-0 text-[15px] font-medium">
-                  {brl(Number(b.price) || 0)}{(b.qty ?? 1) > 1 && <span className="text-[12.5px] font-normal text-ink-3">/peça</span>}
+                  {brl(Number(b.price) || 0, b.moeda ?? "BRL")}{(b.qty ?? 1) > 1 && <span className="text-[12.5px] font-normal text-ink-3">/peça</span>}
                 </span>
               </button>
               <button type="button" className="icon-btn my-auto mr-1 shrink-0 hover:text-danger" aria-label={`Excluir ${b.name}`}

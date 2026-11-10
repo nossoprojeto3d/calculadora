@@ -7,8 +7,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { PRO_COSTS, type ProCostId } from "./data";
 import {
-  calculate, getProgressItems, proFieldId, proToggleId, resolveDerived, validateAll, type Mode, type StoreSettings,
-} from "./calc";
+  calculate, getProgressItems, proFieldId, proToggleId, resolveDerived, validateAll, type Mode, type StoreSettings, usarMoeda } from "./calc";
 import { formReducer, initialFormState, type SavedFormState } from "./form";
 import {
   KEYS, budgetEntry, loadCustomPrinter, loadHistory, loadMode, loadStoreLogo, loadStoreSettings, newBudgetId, remove,
@@ -19,6 +18,8 @@ export type Toast = { text: string; at: number } | null;
 
 export function useCalculator() {
   const [settings, setSettings] = useState<StoreSettings>(() => loadStoreSettings());
+  // a moeda vale para toda a formatação (tela, WhatsApp e PDF) a partir deste render
+  usarMoeda(settings.currency);
   const [storeLogo, setStoreLogoState] = useState<string | null>(() => loadStoreLogo());
   // foto da peça pro PDF do cliente: só na memória (some ao trocar de orçamento)
   const [productPhoto, setProductPhoto] = useState<string | null>(null);

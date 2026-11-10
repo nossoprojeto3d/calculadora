@@ -2,7 +2,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { ArrowCounterClockwise, BookmarkSimple, Check, CheckCircle, Copy, FilePdf, PencilSimple, Storefront, Warning, WhatsappLogo } from "@phosphor-icons/react";
-import { brl, buildWhatsAppText, formatGrams, formatPrintTime, piecesLabel, sanitizeDecimal, whatsAppHref, type CalcResult } from "../lib/calc";
+import { brl, simboloMoeda, buildWhatsAppText, formatGrams, formatPrintTime, piecesLabel, sanitizeDecimal, whatsAppHref, type CalcResult } from "../lib/calc";
 import { buildClientWhatsAppText, clientWhatsAppHref, getClientDetails, hasStoreBranding } from "../lib/cliente";
 import { exportClientPdf, exportPdf } from "../lib/pdf";
 import { KEYS, read, track, write } from "../lib/storage";
@@ -178,7 +178,7 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
           {editing ? (
             <form className="mt-1 flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); commitEdit(); }}>
               <label className="field-box flex min-w-0 flex-1 items-center gap-1.5" style={{ boxShadow: "inset 0 0 0 1.5px var(--accent)" }}>
-                <span className="num text-[22px] font-semibold text-ink-3">R$</span>
+                <span className="num text-[22px] font-semibold text-ink-3">{simboloMoeda()}</span>
                 <input ref={editRef} id="salePrice" inputMode="decimal" autoComplete="off" aria-label="Seu preço de venda"
                   className="num min-w-0 flex-1 bg-transparent text-[30px] font-semibold tracking-[-0.03em] text-ink outline-none"
                   value={draft} onChange={(e) => setDraft(e.target.value.replace(/[^\d,.]/g, ""))}

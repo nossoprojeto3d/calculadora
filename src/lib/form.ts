@@ -13,8 +13,7 @@ import { MATERIALS, PRINTERS, PRO_COSTS, type ProCostId } from "./data";
 import {
   PLATE_QTY_MAX, computeAutoWearValue, computeMarketplaceFeeBase, emptyValues, getMeliAdTypeRate, hasCalculablePrintJob,
   pickMeliTier, pickShopeeTier, proFieldId, proToggleId, sanitizeDecimal, sanitizeInteger,
-  type FormValues, type MeliTier, type Mode, type ShopeeTier, type StoreSettings,
-} from "./calc";
+  type FormValues, type MeliTier, type Mode, type ShopeeTier, type StoreSettings, moedaAtiva } from "./calc";
 
 export interface FormState {
   values: FormValues;
@@ -109,8 +108,8 @@ function setField(state: FormState, id: string, raw: string | boolean): FormStat
   if (id === "marginPct" && String(value).trim() !== "") values.marginFixed = "";
   if (id === "marginFixed" && String(value).trim() !== "") values.marginPct = "";
 
-  // material: preenche o preço/kg com a média do catálogo
-  if (id === "materialSelect") {
+  // material: preenche o preço/kg com a média do catálogo (que é em real; em dólar ou euro a pessoa digita o preço)
+  if (id === "materialSelect" && moedaAtiva() === "BRL") {
     const material = MATERIALS.find((m) => m.id === value);
     if (material) {
       if (material.id === "outro") values.pricePerKg = "0.00";

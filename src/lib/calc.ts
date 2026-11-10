@@ -30,7 +30,26 @@ export interface StoreSettings {
   roundDefault: boolean;
   /** validade padrão do orçamento do cliente, em dias ("" = sem validade) */
   validityDays: string;
+  /** moeda dos valores (só muda o símbolo e a formatação; não converte nada) */
+  currency: Moeda;
 }
+
+// ---------------------------------------------------------
+// MOEDA: Real (padrão), Dólar ou Euro. Os números continuam no formato
+// brasileiro (vírgula nos centavos); muda o símbolo. Não há conversão:
+// a pessoa digita os valores na moeda que escolheu.
+// ---------------------------------------------------------
+export type Moeda = "BRL" | "USD" | "EUR";
+export const MOEDAS: { id: Moeda; nome: string; simbolo: string }[] = [
+  { id: "BRL", nome: "Real", simbolo: "R$" },
+  { id: "USD", nome: "Dólar", simbolo: "US$" },
+  { id: "EUR", nome: "Euro", simbolo: "€" },
+];
+let moedaAtual: Moeda = "BRL";
+/** Define a moeda usada por brl() e simboloMoeda(); valor desconhecido vira Real. */
+export function usarMoeda(m: unknown) { moedaAtual = MOEDAS.some((x) => x.id === m) ? (m as Moeda) : "BRL"; }
+export const moedaAtiva = () => moedaAtual;
+export const simboloMoeda = (m: Moeda = moedaAtual) => (MOEDAS.find((x) => x.id === m) ?? MOEDAS[0]).simbolo;
 
 export const defaultStoreSettings = (): StoreSettings => ({
   kwhPrice: "", marginPct: "", failurePct: "",
@@ -38,6 +57,7 @@ export const defaultStoreSettings = (): StoreSettings => ({
   storeName: "", city: "", whatsapp: "", instagram: "",
   roundDefault: true,
   validityDays: "7",
+  currency: "BRL",
 });
 
 /** "wear" -> "proWear" (mesmo id da V3) */
@@ -134,6 +154,8 @@ export function getEffectiveHourlyRate(settings: StoreSettings) {
 export function computeAutoWearValue(v: FormValues) {
   const printer = getSelectedPrinter(v);
   if (!printer || !(printer.avgPurchasePrice > 0)) return null;
+  // os preços médios das impressoras da lista são em real; em outra moeda só vale o preço digitado em "Outra impressora"
+  if (moedaAtual !== "BRL" && printer.id !== CUSTOM_PRINTER_ID) return null;
 
   const hours = parseInt(str(v, "printHours"), 10) || 0;
   const minutes = parseInt(str(v, "printMinutes"), 10) || 0;
@@ -583,7 +605,8 @@ export function calculate(rawValues: FormValues, mode: Mode, settings: StoreSett
 // ---------------------------------------------------------
 // FORMATAÇÃO E TEXTO DO WHATSAPP
 // ---------------------------------------------------------
-export const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+/** Valor na moeda escolhida nas configurações (o nome ficou da época em que só havia o real). */
+export const brl = (n: number, moeda: Moeda = moedaAtual) => n.toLocaleString("pt-BR", { style: "currency", currency: moeda });
 
 /** "2h30", "0h45" */
 export const formatPrintTime = (hours: number, minutes: number) => `${hours}h${String(minutes).padStart(2, "0")}`;

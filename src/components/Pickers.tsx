@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { CaretDown, Check, MagnifyingGlass } from "@phosphor-icons/react";
 import { CUSTOM_PRINTER_ID, MATERIALS, PRINTERS } from "../lib/data";
-import { brl } from "../lib/calc";
+import { brl, moedaAtiva } from "../lib/calc";
 import { Sheet } from "./ui";
 
 const normalize = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -141,7 +141,7 @@ export function MaterialPicker({ value, onChange, error }: { value: string; onCh
             <>
               <span className="truncate text-[16px] font-medium">{selected.name}</span>
               <span className="truncate text-[13px] text-ink-3">
-                {selected.pricePerKg !== null ? `${selected.group} · média de ${brl(selected.pricePerKg)}/kg` : "Você informa o nome e o preço"}
+                {selected.pricePerKg === null ? "Você informa o nome e o preço" : moedaAtiva() === "BRL" ? `${selected.group} · média de ${brl(selected.pricePerKg)}/kg` : selected.group}
               </span>
             </>
           ) : (

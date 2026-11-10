@@ -39,6 +39,7 @@ O README.md explica a fórmula de preço e onde ficam os dados. Leia-o antes de 
 - O jsPDF vem do npm e só carrega no primeiro clique em "PDF" (import dinâmico).
 - Se adicionar um script ou domínio externo, atualize a CSP em `vite.config.ts`.
 - O orçamento para o cliente nunca pode mostrar custos, lucro, taxas ou valor-hora (o teste e2e 10 confere).
+- Moeda (Configurações → Moeda): Real (padrão), Dólar ou Euro, em `StoreSettings.currency`. Só troca o símbolo e a formatação (`brl()` e `simboloMoeda()` em `calc.ts`, ligados por `usarMoeda()` no `useCalculator`); não converte valores. As médias de preço do filamento e das impressoras (desgaste) são em real, então só entram quando a moeda é Real. Shopee e Mercado Livre continuam em real. Nunca escreva "R$" fixo na tela: use `simboloMoeda()`.
 - Texto digitado sempre entra como texto no React (nunca `dangerouslySetInnerHTML`). Mantenha isso.
 - Os campos precisam ter fonte de pelo menos 16px, para o iPhone não dar zoom automático.
 - Emojis na mensagem do WhatsApp já quebraram. Teste a codificação do texto ao mexer nela (o teste e2e "WhatsApp" confere).
