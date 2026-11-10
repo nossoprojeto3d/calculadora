@@ -581,3 +581,7 @@ body #np3d-cookies button:focus-visible { outline-color: var(--accent); }
     transition-delay: 0s !important;
   }
 }
+
+/* Aviso de cookies do medicao.js com a cor da calculadora (o claro/escuro vem do data-theme) */
+:root { --np3d-aviso-acento: #7b5cfa; --np3d-aviso-sobre-acento: #ffffff; }
+[data-theme="dark"] { --np3d-aviso-acento: #a48bff; --np3d-aviso-sobre-acento: #160b33; }
