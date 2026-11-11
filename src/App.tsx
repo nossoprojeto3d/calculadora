@@ -13,7 +13,9 @@ import {
 } from "@phosphor-icons/react";
 import { CUSTOM_PRINTER_ID } from "./lib/data";
 import { PLATE_QTY_MAX, brl, formatDuration, formatGrams, getPlateQty, moedaAtiva, simboloMoeda } from "./lib/calc";
-import { KEYS, read, readPhotoFile, track, write } from "./lib/storage";
+import { KEYS, read, readPhotoFile, remove, track, write } from "./lib/storage";
+import { idiomaAtivo, t, usarIdioma, type Idioma } from "./lib/i18n";
+import { SeletorIdioma, SeletorMoeda } from "./components/SeletorIdioma";
 import { useCalculator } from "./lib/useCalculator";
 import { InputField, Section, Switch, useIsDesktop } from "./components/ui";
 import { MaterialPicker, PrinterPicker } from "./components/Pickers";
@@ -21,24 +23,25 @@ import { ProCosts } from "./components/ProCosts";
 import { ResultPanel } from "./components/ResultPanel";
 import { Parceiro } from "./components/Parceiro";
 import { HistorySheet } from "./components/HistorySheet";
-import { SettingsSheet } from "./components/SettingsSheet";
+import { SettingsSheet, type TelaConfig } from "./components/SettingsSheet";
 import { IosInstallDialog, QuickToast, SupportDialog } from "./components/Overlays";
 import { BotoesMiniCalc, MiniCalcs, type QualCalc } from "./components/MiniCalcs";
 
 export type Theme = "system" | "light" | "dark";
 
-const ERRORS: Record<string, string> = {
-  customPrinterPower: "Informe a potência da impressora, em watts.",
-  kwhPrice: "Informe o valor do kWh da sua energia.",
-  materialSelect: "Selecione um material.",
-  pricePerKg: "Informe o preço do filamento por kg.",
-  customMaterialName: "Informe o nome do material.",
-  printHours: "Informe as horas (pode ser 0).",
-  printMinutes: "Minutos entre 0 e 59.",
-  printTime: "O tempo não pode ser zero. Preencha horas, minutos ou os dois.",
-  printGrams: "Informe o peso do filamento usado.",
-  margin: "Escolha uma margem de lucro, em % ou valor fixo.",
-};
+/** Mensagens de erro dos campos, lidas na hora do render (com o idioma atual). */
+const errors = (): Record<string, string> => ({
+  customPrinterPower: t("Informe a potência da impressora, em watts."),
+  kwhPrice: t("Informe o valor do kWh da sua energia."),
+  materialSelect: t("Selecione um material."),
+  pricePerKg: t("Informe o preço do filamento por kg."),
+  customMaterialName: t("Informe o nome do material."),
+  printHours: t("Informe as horas (pode ser 0)."),
+  printMinutes: t("Minutos entre 0 e 59."),
+  printTime: t("O tempo não pode ser zero. Preencha horas, minutos ou os dois."),
+  printGrams: t("Informe o peso do filamento usado."),
+  margin: t("Escolha uma margem de lucro, em % ou valor fixo."),
+});
 
 const MARGIN_SHORTCUTS = [0, 50, 100, 150, 200];
 const FREE_POPUP_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -67,6 +70,21 @@ function useTheme() {
     write(KEYS.theme, theme);
   }, [theme]);
   return [theme, setTheme] as const;
+}
+
+// ---------------------------------------------------------
+// IDIOMA (pt-BR é o padrão; a escolha fica salva no aparelho)
+// ---------------------------------------------------------
+function useIdioma() {
+  const [idioma, setIdioma] = useState<Idioma>(() => { usarIdioma(read(KEYS.lang)); return idiomaAtivo(); });
+  // ainda durante o render: todos os componentes abaixo já leem o idioma novo
+  usarIdioma(idioma);
+  useEffect(() => {
+    document.documentElement.lang = idioma;
+    document.title = `${t("Calculadora de impressão 3D")} · NP3D`;
+    if (idioma === "pt-BR") remove(KEYS.lang); else write(KEYS.lang, idioma);
+  }, [idioma]);
+  return [idioma, setIdioma] as const;
 }
 
 // ---------------------------------------------------------
@@ -105,7 +123,9 @@ function useInstall() {
 }
 
 export default function App() {
-  const calc = useCalculator();
+  const [idioma, setIdioma] = useIdioma();
+  const calc = useCalculator(idioma);
+  const trocarIdioma = (i: Idioma) => { setIdioma(i); track("idioma", { idioma: i }); };
   const { state, result, settings, set } = calc;
   const v = state.values;
   const reduce = useReducedMotion();
@@ -115,12 +135,15 @@ export default function App() {
   const [theme, setTheme] = useTheme();
   const install = useInstall();
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpenState] = useState(false);
+  const [settingsInicio, setSettingsInicio] = useState<TelaConfig>("inicio");
+  /** abre a engrenagem (na tela principal ou direto numa subtela, ex.: "loja") */
+  const setSettingsOpen = (o: boolean, tela: TelaConfig = "inicio") => { setSettingsInicio(tela); setSettingsOpenState(o); };
   const [supportOpen, setSupportOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(() => read(KEYS.installDismissed) === "1");
   const supportScheduled = useRef(false);
 
-  const err = (id: string) => (state.errors.includes(id) ? ERRORS[id] ?? null : null);
+  const err = (id: string) => (state.errors.includes(id) ? errors()[id] ?? null : null);
   const str = (id: string) => String(v[id] ?? "");
 
   /** Leva até um campo (com foco), descontando o cabeçalho fixo. */
@@ -190,22 +213,22 @@ export default function App() {
   // ===================== RODAPÉ =====================
   const footer = (
     <footer className="mt-16 flex lg:mt-12 lg:pb-4 flex-col items-center gap-5 border-t border-line pt-8 text-center">
-      <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14.5px] font-medium text-ink-2" aria-label="Outros projetos">
+      <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14.5px] font-medium text-ink-2" aria-label={t("Outros projetos")}>
         <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.com.br/" target="_blank" rel="noopener noreferrer">
-          Nosso site <ArrowUpRight size={14} aria-hidden="true" />
+          {t("Nosso site")} <ArrowUpRight size={14} aria-hidden="true" />
         </a>
         <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.com.br/catalogo/" target="_blank" rel="noopener noreferrer">
-          Catálogo <ArrowUpRight size={14} aria-hidden="true" />
+          {t("Catálogo")} <ArrowUpRight size={14} aria-hidden="true" />
         </a>
         <a className="inline-flex min-h-[40px] items-center gap-1.5 hover:text-ink" href={`https://www.instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">
           <InstagramLogo size={17} aria-hidden="true" />@{instagramHandle}
         </a>
       </nav>
       <p className="max-w-[46ch] text-[14.5px] italic leading-[1.55] text-ink-2">
-        “Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos.”
-        <span className="mt-1 block not-italic text-[13px] text-ink-3">Provérbios 16:3</span>
+        {t("“Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos.”")}
+        <span className="mt-1 block not-italic text-[13px] text-ink-3">{t("Provérbios")} 16:3</span>
       </p>
-      <span className="text-[12.5px] text-ink-3">© 2026 Nosso Projeto 3D · Feita com amor pra quem vive de impressão 3D</span>
+      <span className="text-[12.5px] text-ink-3">{t("© 2026 Nosso Projeto 3D · Feita com amor pra quem vive de impressão 3D")}</span>
     </footer>
   );
 
@@ -224,16 +247,19 @@ export default function App() {
             <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="" width={30} height={36} className="brand-logo h-9 w-auto" />
             <span className="flex min-w-0 flex-col leading-tight">
               <span className="truncate text-[15px] font-semibold tracking-[-0.01em]">Nosso Projeto 3D</span>
-              <span className="text-[12.5px] text-ink-3">Calculadora de impressão 3D</span>
+              <span className="truncate text-[12.5px] text-ink-3">{t("Calculadora de impressão 3D")}</span>
             </span>
           </a>
           {install.canInstall && desktop && (
             <button type="button" className="btn btn-secondary min-h-[40px] gap-2 px-4 text-[14px]" onClick={install.install}>
-              <DownloadSimple size={17} aria-hidden="true" />Instalar app
+              <DownloadSimple size={17} aria-hidden="true" />{t("Instalar app")}
             </button>
           )}
           {desktop && <BotoesMiniCalc abertas={miniCalcs} alternar={q => setMiniCalcs(a => ({ ...a, [q]: !a[q] }))} />}
-          <button type="button" className="icon-btn" aria-label="Meus orçamentos" title="Meus orçamentos" onClick={() => setHistoryOpen(true)}>
+          {/* idioma e moeda: no computador ficam aqui; no celular, nas Configurações */}
+          {desktop && <SeletorIdioma idioma={idioma} onIdioma={trocarIdioma} />}
+          {desktop && <SeletorMoeda moeda={settings.currency} onMoeda={(m) => calc.updateSettings({ ...settings, currency: m })} />}
+          <button type="button" className="icon-btn" aria-label={t("Meus orçamentos")} title={t("Meus orçamentos")} onClick={() => setHistoryOpen(true)}>
             <ClockCounterClockwise size={21} />
             {calc.history.length > 0 && (
               <span className="num absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-accent-ink">
@@ -241,7 +267,7 @@ export default function App() {
               </span>
             )}
           </button>
-          <button type="button" className="icon-btn" aria-label="Configurações" title="Configurações" onClick={() => setSettingsOpen(true)}>
+          <button type="button" className="icon-btn" aria-label={t("Configurações")} title={t("Configurações")} onClick={() => setSettingsOpen(true)}>
             <GearSix size={21} />
           </button>
         </div>
@@ -254,9 +280,9 @@ export default function App() {
             className="overflow-hidden">
             <div className="mx-auto flex max-w-[1180px] items-center gap-2 px-4 pt-3">
               <div className="flex flex-1 items-center gap-2 rounded-full bg-surface-2 py-1 pl-4 pr-1 text-[14px]" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
-                <span className="flex-1 text-ink-2">Tenha a calculadora como app</span>
-                <button type="button" className="min-h-[36px] rounded-full px-3 font-semibold text-accent-text" onClick={install.install}>Instalar</button>
-                <button type="button" className="icon-btn size-9" aria-label="Fechar aviso"
+                <span className="flex-1 text-ink-2">{t("Tenha a calculadora como app")}</span>
+                <button type="button" className="min-h-[36px] rounded-full px-3 font-semibold text-accent-text" onClick={install.install}>{t("Instalar")}</button>
+                <button type="button" className="icon-btn size-9" aria-label={t("Fechar aviso")}
                   onClick={() => { setBannerDismissed(true); write(KEYS.installDismissed, "1"); }}>
                   <X size={15} />
                 </button>
@@ -274,86 +300,86 @@ export default function App() {
             <div id="abertura" className="flex flex-col gap-5 pb-2 lg:pt-6">
               <div className="max-w-[34ch]">
                 <h1 className="text-[34px] font-semibold leading-[1.05] tracking-[-0.035em] sm:text-[44px]">
-                  Quanto cobrar pela sua peça 3D<span className="text-accent">?</span>
+                  {t("Quanto cobrar pela sua peça 3D")}<span className="text-accent">?</span>
                 </h1>
                 <button type="button" onClick={onExample}
                   className="group mt-3 inline-flex min-h-[40px] items-center gap-2 text-[15px] font-medium text-ink-2 hover:text-ink">
                   <span className="flex size-7 items-center justify-center rounded-full bg-surface-2 transition-transform group-hover:scale-105" style={{ boxShadow: "inset 0 0 0 1px var(--line-strong)" }}>
                     <Play size={12} weight="fill" className="text-accent-text" aria-hidden="true" />
                   </span>
-                  Ver um exemplo preenchido
+                  {t("Ver um exemplo preenchido")}
                 </button>
               </div>
               {/* no celular o modo fica aqui; no computador, no alto da coluna fixa */}
               {!desktop && <ModeSwitch mode={state.mode} onChange={calc.setMode} />}
             </div>
 
-            <Section id="secao-impressora" icon={<Printer size={19} />} title="Impressora e energia">
+            <Section id="secao-impressora" icon={<Printer size={19} />} title={t("Impressora e energia")}>
               <PrinterPicker value={str("printerSelect")} customPower={str("customPrinterPower")} onChange={(id) => set("printerSelect", id)} />
               <AnimatePresence initial={false}>
                 {str("printerSelect") === CUSTOM_PRINTER_ID && (
                   <m.div key="custom" initial={reduce ? false : { height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
                     exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }} className="overflow-hidden">
                     <div className="grid grid-cols-2 gap-3 rounded-2xl bg-surface-2 p-3" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
-                      <InputField id="customPrinterPower" label="Potência" suffix="W" kind="numeric" placeholder="350"
+                      <InputField id="customPrinterPower" label={t("Potência")} suffix="W" kind="numeric" placeholder="350"
                         value={str("customPrinterPower")} onChange={(x) => set("customPrinterPower", x)} error={err("customPrinterPower")} />
-                      <InputField id="customPrinterPrice" label={<>Quanto custou <span className="optional">opcional</span></>} prefix={simboloMoeda()} placeholder="3.000"
+                      <InputField id="customPrinterPrice" label={<>{t("Quanto custou")} <span className="optional">{t("opcional")}</span></>} prefix={simboloMoeda()} placeholder="3.000"
                         value={str("customPrinterPrice")} onChange={(x) => set("customPrinterPrice", x)} />
-                      <p className="hint col-span-2">A potência está na etiqueta da fonte ou no site do fabricante. O preço serve pro desgaste, no Profissional.</p>
+                      <p className="hint col-span-2">{t("A potência está na etiqueta da fonte ou no site do fabricante. O preço serve pro desgaste, no Profissional.")}</p>
                     </div>
                   </m.div>
                 )}
               </AnimatePresence>
-              <InputField id="kwhPrice" label="Valor do kWh da sua energia" prefix={simboloMoeda()} suffix="/kWh" placeholder="0,85"
+              <InputField id="kwhPrice" label={t("Valor do kWh da sua energia")} prefix={simboloMoeda()} suffix="/kWh" placeholder="0,85"
                 value={str("kwhPrice")} onChange={(x) => set("kwhPrice", x)} error={err("kwhPrice")}
-                hint={moedaAtiva() === "BRL" ? "Está na sua conta de luz. Média no Brasil: R$ 0,85." : "Está na sua conta de luz."} />
+                hint={moedaAtiva() === "BRL" ? t("Está na sua conta de luz. Média no Brasil: R$ 0,85.") : t("Está na sua conta de luz.")} />
             </Section>
 
-            <Section id="secao-filamento" icon={<Cylinder size={19} />} title="Filamento">
+            <Section id="secao-filamento" icon={<Cylinder size={19} />} title={t("Filamento")}>
               <MaterialPicker value={str("materialSelect")} onChange={(id) => set("materialSelect", id)} error={err("materialSelect")} />
               {str("materialSelect") === "outro" && (
-                <InputField id="customMaterialName" kind="text" label="Nome do material" placeholder="Ex: PA-CF, PC Blend, PP"
+                <InputField id="customMaterialName" kind="text" label={t("Nome do material")} placeholder={t("Ex: PA-CF, PC Blend, PP")}
                   value={str("customMaterialName")} onChange={(x) => set("customMaterialName", x)} error={err("customMaterialName")} />
               )}
-              <InputField id="pricePerKg" label="Preço do filamento" prefix={simboloMoeda()} suffix="/kg" placeholder="109,90"
+              <InputField id="pricePerKg" label={t("Preço do filamento")} prefix={simboloMoeda()} suffix="/kg" placeholder="109,90"
                 value={str("pricePerKg")} onChange={(x) => set("pricePerKg", x)} error={err("pricePerKg")}
-                hint={moedaAtiva() === "BRL" ? "Vem com a média do mercado. Ajuste pro que você pagou." : "Quanto você pagou no rolo de 1 kg."} />
+                hint={moedaAtiva() === "BRL" ? t("Vem com a média do mercado. Ajuste pro que você pagou.") : t("Quanto você pagou no rolo de 1 kg.")} />
             </Section>
 
-            <Section id="secao-peca" icon={<Timer size={19} />} title="A peça">
-              <InputField id="jobName" kind="text" label={<>Nome da peça <span className="optional">opcional</span></>} placeholder="Ex: Suporte de celular"
+            <Section id="secao-peca" icon={<Timer size={19} />} title={t("A peça")}>
+              <InputField id="jobName" kind="text" label={<>{t("Nome da peça")} <span className="optional">{t("opcional")}</span></>} placeholder={t("Ex: Suporte de celular")}
                 value={str("jobName")} onChange={(x) => set("jobName", x)} />
               <PlateQty value={str("plateQty")} onChange={(x) => set("plateQty", x)} />
               <div className="flex flex-col gap-2" data-field="printHours">
-                <span className="label">{plate ? "Tempo da mesa inteira" : "Tempo de impressão"} <span className="optional">está no fatiador</span></span>
+                <span className="label">{plate ? t("Tempo da mesa inteira") : t("Tempo de impressão")} <span className="optional">{t("está no fatiador")}</span></span>
                 <div className="grid grid-cols-2 gap-3">
-                  <InputField id="printHours" ariaLabel="Horas de impressão" kind="numeric" suffix="h" placeholder="2"
+                  <InputField id="printHours" ariaLabel={t("Horas de impressão")} kind="numeric" suffix="h" placeholder="2"
                     value={str("printHours")} onChange={(x) => set("printHours", x)} error={err("printHours") ?? (state.errors.includes("printTime") ? " " : null)} />
-                  <InputField id="printMinutes" ariaLabel="Minutos de impressão" kind="numeric" suffix="min" placeholder="30"
+                  <InputField id="printMinutes" ariaLabel={t("Minutos de impressão")} kind="numeric" suffix="min" placeholder="30"
                     value={str("printMinutes")} onChange={(x) => set("printMinutes", x)} error={err("printMinutes") ?? (state.errors.includes("printTime") ? " " : null)} />
                 </div>
                 {err("printTime") && <p className="error-text" role="alert">{err("printTime")}</p>}
               </div>
-              <InputField id="printGrams" label={plate ? "Peso da mesa inteira" : "Peso do filamento usado"} suffix="g" placeholder="45"
+              <InputField id="printGrams" label={plate ? t("Peso da mesa inteira") : t("Peso do filamento usado")} suffix="g" placeholder="45"
                 value={str("printGrams")} onChange={(x) => set("printGrams", x)} error={err("printGrams")}
-                hint={plate && perPiece ? `Também está no fatiador. Por peça: ${perPiece}.` : "Também está no fatiador."} />
+                hint={plate && perPiece ? t("Também está no fatiador. Por peça: {porPeca}.", { porPeca: perPiece }) : t("Também está no fatiador.")} />
             </Section>
 
             <AnimatePresence initial={false}>
               {isPro && (
                 <m.div key="pro" initial={reduce ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                   exit={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
-                  <Section id="secao-pro" icon={<Briefcase size={19} />} title="Custos do negócio" tone="pro">
-                    <p className="hint -mt-2">Ligue só o que faz parte do seu custo. O que estiver desligado não entra na conta.</p>
+                  <Section id="secao-pro" icon={<Briefcase size={19} />} title={t("Custos do negócio")} tone="pro">
+                    <p className="hint -mt-2">{t("Ligue só o que faz parte do seu custo. O que estiver desligado não entra na conta.")}</p>
                     <ProCosts calc={calc} onOpenSettings={() => setSettingsOpen(true)} />
                   </Section>
                 </m.div>
               )}
             </AnimatePresence>
 
-            <Section id="secao-lucro" icon={<TrendUp size={19} />} title="Seu lucro">
+            <Section id="secao-lucro" icon={<TrendUp size={19} />} title={t("Seu lucro")}>
               <div className="flex flex-col gap-2" data-field="marginPct">
-                <span className="label">Margem de lucro</span>
+                <span className="label">{t("Margem de lucro")}</span>
                 <div className="flex flex-wrap gap-2">
                   {MARGIN_SHORTCUTS.map((m) => (
                     <button key={m} type="button" className="chip num min-w-[60px]" aria-pressed={pctFilled && str("marginPct") === String(m)}
@@ -362,21 +388,21 @@ export default function App() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <InputField id="marginPct" label="Margem em %" suffix="%" placeholder="100" disabled={fixedFilled}
+                <InputField id="marginPct" label={t("Margem em %")} suffix="%" placeholder="100" disabled={fixedFilled}
                   value={str("marginPct")} onChange={(x) => set("marginPct", x)} error={state.errors.includes("margin") ? " " : null} />
-                <InputField id="marginFixed" label="Ou valor fixo" prefix={simboloMoeda()} placeholder="15,00" disabled={pctFilled}
+                <InputField id="marginFixed" label={t("Ou valor fixo")} prefix={simboloMoeda()} placeholder="15,00" disabled={pctFilled}
                   value={str("marginFixed")} onChange={(x) => set("marginFixed", x)} error={state.errors.includes("margin") ? " " : null} />
               </div>
               {err("margin")
                 ? <p className="error-text -mt-2" role="alert">{err("margin")}</p>
-                : <p className="hint -mt-2">Use a % ou o valor fixo. Ao preencher um, o outro fica bloqueado.</p>}
+                : <p className="hint -mt-2">{t("Use a % ou o valor fixo. Ao preencher um, o outro fica bloqueado.")}</p>}
 
               <label className="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-2xl bg-surface-2 px-4" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
                 <span className="flex-1">
-                  <span className="block text-[15px] font-medium">{v.roundToggle ? "Arredondar para ,99 acima" : "Sem arredondamento"}</span>
-                  <span className="block text-[13px] text-ink-3">Ex.: {brl(45.24)} vira {brl(45.99)}</span>
+                  <span className="block text-[15px] font-medium">{v.roundToggle ? t("Arredondar para ,99 acima") : t("Sem arredondamento")}</span>
+                  <span className="block text-[13px] text-ink-3">{t("Ex.: {de} vira {para}", { de: brl(45.24), para: brl(45.99) })}</span>
                 </span>
-                <Switch id="roundToggle" checked={v.roundToggle === true} onChange={(x) => set("roundToggle", x)} label="Arredondar para ,99" />
+                <Switch id="roundToggle" checked={v.roundToggle === true} onChange={(x) => set("roundToggle", x)} label={t("Arredondar para ,99")} />
               </label>
 
             </Section>
@@ -385,10 +411,10 @@ export default function App() {
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
               <button id="calcBtn" type="button" className="btn btn-primary" onClick={onCalculate}>
-                Calcular preço
+                {t("Calcular preço")}
                 <span className="btn-icon-orb"><ArrowRight size={17} weight="bold" aria-hidden="true" /></span>
               </button>
-              <button type="button" className="btn btn-secondary" onClick={onClear}>Novo orçamento</button>
+              <button type="button" className="btn btn-secondary" onClick={onClear}>{t("Novo orçamento")}</button>
             </div>
             {desktop && footer}
           </div>
@@ -398,9 +424,9 @@ export default function App() {
               sempre visíveis; só o formulário ao lado rola. */}
           <aside className="min-w-0 lg:sticky lg:top-[76px] lg:flex lg:h-[calc(100dvh-92px)] lg:flex-col lg:justify-center lg:gap-3 lg:self-start">
             {desktop && <ModeSwitch mode={state.mode} onChange={calc.setMode} compact />}
-            <ResultPanel calc={calc} onJumpTo={jumpTo} onOpenSettings={() => setSettingsOpen(true)} />
+            <ResultPanel calc={calc} onJumpTo={jumpTo} onOpenSettings={() => setSettingsOpen(true, "loja")} />
             <Parceiro />
-            <p className="hint rp-hide2 mt-3 px-2 text-center lg:mt-0 lg:text-[12.5px]">Tudo fica salvo só no seu aparelho. Nada é enviado pra lugar nenhum.</p>
+            <p className="hint rp-hide2 mt-3 px-2 text-center lg:mt-0 lg:text-[12.5px]">{t("Tudo fica salvo só no seu aparelho. Nada é enviado pra lugar nenhum.")}</p>
           </aside>
         </div>
 
@@ -413,7 +439,8 @@ export default function App() {
 
       <HistorySheet calc={calc} open={historyOpen} onOpenChange={setHistoryOpen}
         onOpened={() => document.getElementById("calculadora")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" })} />
-      <SettingsSheet calc={calc} open={settingsOpen} onOpenChange={setSettingsOpen} theme={theme} onTheme={setTheme}
+      <SettingsSheet calc={calc} open={settingsOpen} onOpenChange={(o) => setSettingsOpen(o)} inicio={settingsInicio} theme={theme} onTheme={setTheme}
+        idioma={idioma} onIdioma={trocarIdioma} desktop={desktop}
         canInstall={install.canInstall} onInstall={install.install} />
       <SupportDialog open={supportOpen} onOpenChange={setSupportOpen} instagram="https://www.instagram.com/nossoprojeto3d" />
       <IosInstallDialog open={install.iosOpen} onOpenChange={install.setIosOpen} />
@@ -431,20 +458,20 @@ function ModeSwitch({ mode, onChange, compact }: { mode: "basico" | "profissiona
   return (
     <div className="flex-none">
       <div className="relative grid grid-cols-2 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
-        role="tablist" aria-label="Modo da calculadora">
+        role="tablist" aria-label={t("Modo da calculadora")}>
         <span aria-hidden="true" className="absolute bottom-1 left-1 top-1 w-[calc(50%-4px)] rounded-full bg-accent transition-transform duration-500 ease-[var(--ease-spring)]"
           style={{ transform: isPro ? "translateX(100%)" : "translateX(0)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.28)" }} />
         {(["basico", "profissional"] as const).map((m) => (
           <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => onChange(m)}
             className={`relative rounded-full text-[15px] font-semibold transition-colors duration-300 ${compact ? "min-h-[42px]" : "min-h-[46px]"} ${mode === m ? "text-accent-ink" : "text-ink-2 hover:text-ink"}`}>
-            {m === "basico" ? "Básico" : "Profissional"}
+            {m === "basico" ? t("Básico") : t("Profissional")}
           </button>
         ))}
       </div>
       <p className={`hint px-2 ${compact ? "rp-hide2 mt-1.5 text-[12.5px]" : "mt-2"}`}>
         {isPro
-          ? "Tudo do Básico + desgaste, mão de obra, embalagem, taxas de marketplace e impostos."
-          : "Material, energia e lucro: o essencial pra precificar."}
+          ? t("Tudo do Básico + desgaste, mão de obra, embalagem, taxas de marketplace e impostos.")
+          : t("Material, energia e lucro: o essencial pra precificar.")}
       </p>
     </div>
   );
@@ -460,11 +487,11 @@ function PlateQty({ value, onChange }: { value: string; onChange: (v: string) =>
   return (
     <div className="flex min-h-[56px] items-center gap-3 rounded-2xl bg-surface-2 py-1.5 pl-4 pr-1.5" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }} data-field="plateQty">
       <span className="min-w-0 flex-1">
-        <label htmlFor="plateQty" className="block text-[15px] font-medium">Peças na mesa</label>
-        <span className="block text-[13px] text-ink-3">{qty > 1 ? "Preço sai por peça" : "Várias iguais de uma vez?"}</span>
+        <label htmlFor="plateQty" className="block text-[15px] font-medium">{t("Peças na mesa")}</label>
+        <span className="block text-[13px] text-ink-3">{qty > 1 ? t("Preço sai por peça") : t("Várias iguais de uma vez?")}</span>
       </span>
       <div className="flex shrink-0 items-center rounded-full bg-surface" style={{ boxShadow: "inset 0 0 0 1px var(--line-strong)" }}>
-        <button type="button" className="icon-btn" aria-label="Uma peça a menos" disabled={qty <= 1}
+        <button type="button" className="icon-btn" aria-label={t("Uma peça a menos")} disabled={qty <= 1}
           onClick={() => onChange(String(qty - 1))}>
           <Minus size={16} weight="bold" />
         </button>
@@ -472,7 +499,7 @@ function PlateQty({ value, onChange }: { value: string; onChange: (v: string) =>
           className="num w-11 bg-transparent text-center text-[16px] font-semibold text-ink outline-none"
           value={value} onChange={(e) => onChange(e.target.value)}
           onBlur={() => { if (!(n >= 1)) onChange("1"); }} />
-        <button type="button" className="icon-btn" aria-label="Uma peça a mais" disabled={qty >= PLATE_QTY_MAX}
+        <button type="button" className="icon-btn" aria-label={t("Uma peça a mais")} disabled={qty >= PLATE_QTY_MAX}
           onClick={() => onChange(String(qty + 1))}>
           <Plus size={16} weight="bold" />
         </button>
@@ -544,8 +571,8 @@ function ClientSection({ calc }: { calc: ReturnType<typeof useCalculator> }) {
             <UserCircle size={19} />
           </span>
           <span className="flex-1">
-            <span id="secao-cliente-title" className="block text-[17px] font-semibold tracking-[-0.01em]">Dados para o cliente</span>
-            <span className="block text-[13px] text-ink-3">Opcional. Só no orçamento do cliente.</span>
+            <span id="secao-cliente-title" className="block text-[17px] font-semibold tracking-[-0.01em]">{t("Dados para o cliente")}</span>
+            <span className="block text-[13px] text-ink-3">{t("Opcional. Só no orçamento do cliente.")}</span>
           </span>
           <CaretDown size={18} className={`shrink-0 text-ink-3 transition-transform duration-300 ${open ? "rotate-180" : ""}`} aria-hidden="true" />
         </button>
@@ -554,51 +581,51 @@ function ClientSection({ calc }: { calc: ReturnType<typeof useCalculator> }) {
             <m.div id="secao-cliente-campos" key="campos" initial={reduce ? false : { height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
               exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }} transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }} className="overflow-hidden">
               <div className="flex flex-col gap-5 border-t border-line px-4 pb-5 pt-5 sm:px-6 sm:pb-6">
-                <InputField id="clientName" kind="text" label="Para quem é" placeholder="Ex: Maria" autoComplete="off"
+                <InputField id="clientName" kind="text" label={t("Para quem é")} placeholder={t("Ex: Maria")} autoComplete="off"
                   value={str("clientName")} onChange={(x) => set("clientName", x)} />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <InputField id="deliveryTime" kind="text" label="Prazo de entrega" placeholder="Ex: 5 dias úteis"
+                  <InputField id="deliveryTime" kind="text" label={t("Prazo de entrega")} placeholder={t("Ex: 5 dias úteis")}
                     value={str("deliveryTime")} onChange={(x) => set("deliveryTime", x)} />
-                  <InputField id="validityDays" kind="numeric" label="Validade do orçamento" suffix="dias" placeholder="7"
-                    value={str("validityDays")} onChange={(x) => set("validityDays", x)} hint="Vazio = sem validade." />
+                  <InputField id="validityDays" kind="numeric" label={t("Validade do orçamento")} suffix={t("dias")} placeholder="7"
+                    value={str("validityDays")} onChange={(x) => set("validityDays", x)} hint={t("Vazio = sem validade.")} />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="notes" className="label">Observações</label>
-                  <textarea id="notes" rows={3} maxLength={500} placeholder="Ex: cor preta, acabamento lixado, pagamento no Pix."
+                  <label htmlFor="notes" className="label">{t("Observações")}</label>
+                  <textarea id="notes" rows={3} maxLength={500} placeholder={t("Ex: cor preta, acabamento lixado, pagamento no Pix.")}
                     value={str("notes")} onChange={(e) => set("notes", e.target.value)}
                     className="field-box min-h-[96px] resize-y py-3 text-[16px] leading-[1.45] text-ink outline-none" />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <span className="label">Foto da peça</span>
+                  <span className="label">{t("Foto da peça")}</span>
                   <div className="flex items-center gap-3 rounded-2xl bg-surface-2 p-3 transition-shadow" {...dropProps}
                     style={{ boxShadow: dragging ? "inset 0 0 0 2px var(--accent)" : "inset 0 0 0 1px var(--line)" }}>
-                    <button type="button" onClick={() => photoRef.current?.click()} aria-label={productPhoto ? "Trocar foto da peça" : "Adicionar foto da peça"}
+                    <button type="button" onClick={() => photoRef.current?.click()} aria-label={productPhoto ? t("Trocar foto da peça") : t("Adicionar foto da peça")}
                       className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
                       {productPhoto
-                        ? <img src={productPhoto} alt="Foto da peça" className="size-full object-cover" />
+                        ? <img src={productPhoto} alt={t("Foto da peça")} className="size-full object-cover" />
                         : <ImageSquare size={26} className="text-ink-3" aria-hidden="true" />}
                     </button>
                     <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
                       <span className="text-[13px] leading-snug text-ink-3">
-                        {dragging ? "Solte a imagem aqui." : isDesktop ? <>Vai em destaque no PDF do cliente. Escolha, arraste ou cole com <kbd className="mono text-[12px]">{pasteKey}</kbd>.</> : "Vai em destaque no PDF do cliente."}
+                        {dragging ? t("Solte a imagem aqui.") : isDesktop ? <>{t("Vai em destaque no PDF do cliente. Escolha, arraste ou cole com")} <kbd className="mono text-[12px]">{pasteKey}</kbd>.</> : t("Vai em destaque no PDF do cliente.")}
                       </span>
                       <div className="flex flex-wrap items-center gap-2">
                         <button type="button" className="btn btn-secondary min-h-[40px] px-4 text-[14px]" disabled={photoState === "busy"}
                           onClick={() => photoRef.current?.click()}>
-                          {photoState === "busy" ? "Carregando…" : productPhoto ? "Trocar" : "Adicionar foto"}
+                          {photoState === "busy" ? t("Carregando…") : productPhoto ? t("Trocar") : t("Adicionar foto")}
                         </button>
                         {productPhoto && (
-                          <button type="button" className="icon-btn hover:text-danger" aria-label="Remover foto da peça"
+                          <button type="button" className="icon-btn hover:text-danger" aria-label={t("Remover foto da peça")}
                             onClick={() => { setProductPhoto(null); setPhotoState("idle"); }}>
                             <Trash size={18} />
                           </button>
                         )}
                       </div>
                     </div>
-                    <input ref={photoRef} type="file" accept="image/*" className="sr-only" aria-label="Escolher foto da peça"
+                    <input ref={photoRef} type="file" accept="image/*" className="sr-only" aria-label={t("Escolher foto da peça")}
                       tabIndex={-1} onChange={(e) => onPhoto(e.target.files?.[0])} />
                   </div>
-                  {photoState === "error" && <p className="error-text" role="alert">Não foi possível ler essa imagem. Use uma foto JPG ou PNG.</p>}
+                  {photoState === "error" && <p className="error-text" role="alert">{t("Não foi possível ler essa imagem. Use uma foto JPG ou PNG.")}</p>}
                 </div>
               </div>
             </m.div>
@@ -687,10 +714,10 @@ function PriceDock({ calc, onCalculate }: { calc: ReturnType<typeof useCalculato
       <div className="mx-3 flex items-center gap-3 rounded-[22px] border border-line bg-surface/[0.97] py-2 pl-4 pr-2 shadow-[0_18px_40px_-16px_rgb(var(--shadow-tint)/0.7)] backdrop-blur-xl">
         <div className="min-w-0 flex-1">
           <p className="truncate text-[12.5px] text-ink-3">
-            {result ? (result.quantity > 1 ? `${result.hasCustomName ? result.jobName : "Preço"} · por peça` : result.hasCustomName ? result.jobName : "Preço sugerido") : missing.length ? `Faltam ${missing.length} de ${progress.length}` : "Tudo preenchido"}
+            {result ? (result.quantity > 1 ? `${result.hasCustomName ? result.jobName : t("Preço")} · ${t("por peça")}` : result.hasCustomName ? result.jobName : t("Preço sugerido")) : missing.length ? t("Faltam {n} de {total}", { n: missing.length, total: progress.length }) : t("Tudo preenchido")}
           </p>
           <p className={`truncate ${result ? "num text-[21px] font-semibold tracking-[-0.03em]" : "text-[14.5px] font-medium"}`}>
-            {result ? brl(result.finalPrice) : missing.length ? missing.slice(0, 2).map((m) => m.label).join(", ") + (missing.length > 2 ? "…" : "") : "Pronto pra calcular"}
+            {result ? brl(result.finalPrice) : missing.length ? missing.slice(0, 2).map((m) => m.label).join(", ") + (missing.length > 2 ? "…" : "") : t("Pronto pra calcular")}
           </p>
         </div>
         <button type="button" tabIndex={hidden ? -1 : 0} className="btn btn-primary min-h-[46px] px-5 text-[15px]"
@@ -698,7 +725,7 @@ function PriceDock({ calc, onCalculate }: { calc: ReturnType<typeof useCalculato
             if (result) document.getElementById("orcamento")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
             else onCalculate();
           }}>
-          {result ? "Ver orçamento" : "Calcular"}
+          {result ? t("Ver orçamento") : t("Calcular")}
         </button>
       </div>
     </m.div>

@@ -6,6 +6,7 @@
 
 import { defaultStoreSettings, formatPrintTime, moedaAtiva, type CalcResult, type Moeda, type Mode, type StoreSettings } from "./calc";
 import type { SavedFormState } from "./form";
+import { t, localeDatas } from "./i18n";
 
 export const KEYS = {
   settings: "np3d_store_settings",
@@ -18,6 +19,7 @@ export const KEYS = {
   legacyDraft: "np3d_draft",
   storeLogo: "np3d_store_logo",
   exportMode: "np3d_export_mode",
+  lang: "np3d_lang",
 } as const;
 
 export function read(key: string): string | null {
@@ -71,7 +73,7 @@ export function readPhotoFile(file: File, maxSide = 1600): Promise<string> {
 
 function readImageFile(file: File, maxSide: number, type: "image/png" | "image/jpeg"): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) { reject(new Error("Não é uma imagem.")); return; }
+    if (!file.type.startsWith("image/")) { reject(new Error(t("Não é uma imagem."))); return; }
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
@@ -88,7 +90,7 @@ function readImageFile(file: File, maxSide: number, type: "image/png" | "image/j
       URL.revokeObjectURL(url);
       resolve(canvas.toDataURL(type, 0.88));
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Não foi possível ler a imagem.")); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error(t("Não foi possível ler a imagem."))); };
     img.src = url;
   });
 }
@@ -150,8 +152,8 @@ export function formatSavedDate(timestamp: number) {
   const date = new Date(timestamp);
   const today = new Date();
   return date.toDateString() === today.toDateString()
-    ? `hoje, ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
-    : date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
+    ? t("hoje, {hora}", { hora: date.toLocaleTimeString(localeDatas(), { hour: "2-digit", minute: "2-digit" }) })
+    : date.toLocaleDateString(localeDatas(), { day: "2-digit", month: "short" }).replace(".", "");
 }
 
 /** Evento de uso (medicao.js). Nunca envia preços nem textos digitados. */

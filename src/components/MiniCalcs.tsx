@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Backspace, Calculator, Clock, Copy, DotsSixVertical, Trash, X } from "@phosphor-icons/react";
+import { t } from "../lib/i18n";
 import {
   estadoInicial, formatarDuracao, formatarHorasDecimais, formatarNumero, lerDuracao, teclar, type EstadoCalc,
 } from "../lib/miniCalc";
@@ -18,8 +19,8 @@ export function BotoesMiniCalc({ abertas, alternar }: { abertas: Record<QualCalc
   );
   return (
     <>
-      {botao("simples", "Calculadora", Calculator)}
-      {botao("horas", "Calculadora de horas", Clock)}
+      {botao("simples", t("Calculadora"), Calculator)}
+      {botao("horas", t("Calculadora de horas"), Clock)}
     </>
   );
 }
@@ -47,12 +48,12 @@ export function MiniCalcs({ abertas, fechar }: { abertas: Record<QualCalc, boole
   return (
     <AnimatePresence>
       {abertas.simples && (
-        <Cartao key="simples" titulo="Calculadora" Icone={Calculator} esquerda={24} baixo={baixo} aoFechar={() => fechar("simples")}>
+        <Cartao key="simples" titulo={t("Calculadora")} Icone={Calculator} esquerda={24} baixo={baixo} aoFechar={() => fechar("simples")}>
           <CalcSimples />
         </Cartao>
       )}
       {abertas.horas && (
-        <Cartao key="horas" titulo="Calculadora de horas" Icone={Clock} esquerda={abertas.simples ? 24 + 272 + 12 : 24} baixo={baixo} aoFechar={() => fechar("horas")}>
+        <Cartao key="horas" titulo={t("Calculadora de horas")} Icone={Clock} esquerda={abertas.simples ? 24 + 272 + 12 : 24} baixo={baixo} aoFechar={() => fechar("horas")}>
           <CalcHoras />
         </Cartao>
       )}
@@ -104,7 +105,7 @@ function Cartao({ titulo, Icone, esquerda, baixo, aoFechar, children }: {
           <Icone size={16} className="text-accent-text" aria-hidden="true" />
           <span className="flex-1 text-[13px] font-semibold text-ink-2">{titulo}</span>
           <DotsSixVertical size={16} className="text-ink-3" aria-hidden="true" />
-          <button type="button" className="icon-btn size-9" aria-label={`Fechar ${titulo.toLowerCase()}`} title="Fechar (Esc)" onClick={aoFechar}>
+          <button type="button" className="icon-btn size-9" aria-label={t("Fechar {nome}", { nome: titulo.toLowerCase() })} title={t("Fechar (Esc)")} onClick={aoFechar}>
             <X size={15} />
           </button>
         </div>
@@ -129,19 +130,19 @@ const DO_TECLADO: Record<string, string> = { "+": "+", "-": "−", "*": "×", x:
 function CalcSimples() {
   const [s, setS] = useState<EstadoCalc>(estadoInicial);
   const { copiado, copiar } = useCopiar();
-  const aperta = (t: string) => setS(atual => teclar(atual, t));
+  const aperta = (tecla: string) => setS(atual => teclar(atual, tecla));
   const valor = s.feito && s.resultado !== null ? formatarNumero(s.resultado) : null;
 
   useEffect(() => {
     // teclado físico só quando o foco está dentro desta calculadora
-    const el = document.querySelector<HTMLElement>('[role=dialog][aria-label="Calculadora"]');
+    const el = document.querySelector<HTMLElement>(`[role=dialog][aria-label="${t("Calculadora")}"]`);
     if (!el) return;
     const on = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const t = /^\d$/.test(e.key) ? e.key : DO_TECLADO[e.key];
-      if (!t) return;
+      const tecla = /^\d$/.test(e.key) ? e.key : DO_TECLADO[e.key];
+      if (!tecla) return;
       e.preventDefault();
-      aperta(t);
+      aperta(tecla);
     };
     el.addEventListener("keydown", on);
     return () => el.removeEventListener("keydown", on);
@@ -149,19 +150,19 @@ function CalcSimples() {
 
   return (
     <div>
-      <button type="button" className="mini-calc-visor" title={valor ? "Copiar o resultado" : undefined}
+      <button type="button" className="mini-calc-visor" title={valor ? t("Copiar o resultado") : undefined}
         onClick={() => valor && copiar(valor.replace(/\./g, ""))} aria-live="polite">
         <span className="mono block min-h-[18px] truncate text-right text-[12.5px] text-ink-3">{s.feito ? `${s.expressao} =` : " "}</span>
         <span className="num block truncate text-right text-[28px] font-semibold leading-tight tracking-[-0.02em]">
           {valor ?? (s.expressao || "0")}
         </span>
-        <span className="block h-4 text-right text-[11.5px] text-accent-text">{copiado ? "Copiado" : valor ? <><Copy size={11} className="inline" /> clique pra copiar</> : ""}</span>
+        <span className="block h-4 text-right text-[11.5px] text-accent-text">{copiado ? t("Copiado") : valor ? <><Copy size={11} className="inline" /> {t("clique pra copiar")}</> : ""}</span>
       </button>
       <div className="mt-2 grid grid-cols-4 gap-1.5">
-        {TECLAS.map(t => (
-          <button key={t} type="button" onClick={() => aperta(t)} aria-label={t === "⌫" ? "Apagar" : t === "C" ? "Limpar" : t}
-            className={`mini-calc-tecla ${t === "=" ? "row-span-2 mini-calc-igual" : ""} ${t === "0" ? "col-span-2" : ""} ${["÷", "×", "−", "+"].includes(t) ? "text-accent-text" : ""} ${["C", "⌫"].includes(t) ? "text-ink-2" : ""}`}>
-            {t === "⌫" ? <Backspace size={17} /> : t}
+        {TECLAS.map(tecla => (
+          <button key={tecla} type="button" onClick={() => aperta(tecla)} aria-label={tecla === "⌫" ? t("Apagar") : tecla === "C" ? t("Limpar") : tecla}
+            className={`mini-calc-tecla ${tecla === "=" ? "row-span-2 mini-calc-igual" : ""} ${tecla === "0" ? "col-span-2" : ""} ${["÷", "×", "−", "+"].includes(tecla) ? "text-accent-text" : ""} ${["C", "⌫"].includes(tecla) ? "text-ink-2" : ""}`}>
+            {tecla === "⌫" ? <Backspace size={17} /> : tecla}
           </button>
         ))}
       </div>
@@ -177,7 +178,7 @@ function CalcHoras() {
   const [erro, setErro] = useState(false);
   const { copiado, copiar } = useCopiar();
   const campo = useRef<HTMLInputElement>(null);
-  const total = linhas.reduce((t, l) => t + l.minutos, 0);
+  const total = linhas.reduce((soma, l) => soma + l.minutos, 0);
 
   function lancar(sinal: 1 | -1) {
     const min = lerDuracao(texto);
@@ -191,17 +192,17 @@ function CalcHoras() {
   return (
     <div>
       <div className="field-box !min-h-[44px] !px-3" data-invalid={erro || undefined}>
-        <input ref={campo} value={texto} placeholder="2:30, 2h30, 45m ou 1,5" aria-label="Duração" inputMode="text"
+        <input ref={campo} value={texto} placeholder={t("2:30, 2h30, 45m ou 1,5")} aria-label={t("Duração")} inputMode="text"
           className="!h-[42px] text-[16px]" autoComplete="off" spellCheck={false}
           onChange={e => { setTexto(e.target.value); setErro(false); }}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); lancar(e.shiftKey ? -1 : 1); } }} />
       </div>
       <p className={`mt-1 min-h-[16px] text-[11.5px] ${erro ? "text-danger" : "text-ink-3"}`}>
-        {erro ? "Não entendi. Use 2:30, 2h30, 45m ou 1,5." : "Enter soma · Shift+Enter tira"}
+        {erro ? t("Não entendi. Use 2:30, 2h30, 45m ou 1,5.") : t("Enter soma · Shift+Enter tira")}
       </p>
       <div className="mt-1 grid grid-cols-2 gap-1.5">
-        <button type="button" className="mini-calc-tecla text-[14px]" onClick={() => lancar(1)}>+ Somar</button>
-        <button type="button" className="mini-calc-tecla text-[14px]" onClick={() => lancar(-1)}>− Tirar</button>
+        <button type="button" className="mini-calc-tecla text-[14px]" onClick={() => lancar(1)}>{t("+ Somar")}</button>
+        <button type="button" className="mini-calc-tecla text-[14px]" onClick={() => lancar(-1)}>{t("− Tirar")}</button>
       </div>
 
       {linhas.length > 0 && (
@@ -209,7 +210,7 @@ function CalcHoras() {
           {linhas.map(l => (
             <li key={l.id} className="flex items-center gap-2 py-0.5 pl-2 text-[13.5px]">
               <span className={`num flex-1 ${l.minutos < 0 ? "text-danger" : "text-ink-2"}`}>{l.minutos < 0 ? l.texto : `+${l.texto}`}</span>
-              <button type="button" className="icon-btn size-8" aria-label={`Tirar ${l.texto} da conta`} onClick={() => setLinhas(ls => ls.filter(x => x.id !== l.id))}>
+              <button type="button" className="icon-btn size-8" aria-label={t("Tirar {texto} da conta", { texto: l.texto })} onClick={() => setLinhas(ls => ls.filter(x => x.id !== l.id))}>
                 <X size={13} />
               </button>
             </li>
@@ -217,21 +218,21 @@ function CalcHoras() {
         </ul>
       )}
 
-      <button type="button" className="mini-calc-visor mt-2" title={linhas.length ? "Copiar o total" : undefined}
+      <button type="button" className="mini-calc-visor mt-2" title={linhas.length ? t("Copiar o total") : undefined}
         onClick={() => linhas.length && copiar(formatarDuracao(total))} aria-live="polite">
         <span className="flex items-baseline justify-between gap-2">
-          <span className="text-[12.5px] text-ink-3">Total</span>
+          <span className="text-[12.5px] text-ink-3">{t("Total")}</span>
           <span className="num text-[26px] font-semibold leading-tight tracking-[-0.02em]">{formatarDuracao(total)}</span>
         </span>
         <span className="flex justify-between text-[11.5px]">
-          <span className="text-accent-text">{copiado ? "Copiado" : linhas.length ? "clique pra copiar" : ""}</span>
+          <span className="text-accent-text">{copiado ? t("Copiado") : linhas.length ? t("clique pra copiar") : ""}</span>
           <span className="num text-ink-3">{formatarHorasDecimais(total)}</span>
         </span>
       </button>
       {linhas.length > 0 && (
         <button type="button" className="mt-1.5 flex min-h-[36px] w-full items-center justify-center gap-1.5 rounded-full text-[13px] text-ink-3 hover:text-ink"
           onClick={() => { setLinhas([]); campo.current?.focus(); }}>
-          <Trash size={14} /> Limpar
+          <Trash size={14} /> {t("Limpar")}
         </button>
       )}
     </div>

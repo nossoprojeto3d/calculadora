@@ -6,6 +6,7 @@
    A versão completa (calc.ts → buildWhatsAppText) continua igual à V3.
    ========================================================= */
 
+import { t } from "./i18n";
 import { brl, buildStoreSignatureLine, piecesLabel, type CalcResult, type FormValues, type StoreSettings } from "./calc";
 
 export interface ClientDetails {
@@ -34,16 +35,16 @@ export const hasStoreBranding = (s: StoreSettings, logo: string | null) => !!(s.
 
 export function buildClientWhatsAppText(r: CalcResult, d: ClientDetails, settings: StoreSettings) {
   const lines = [
-    d.clientName ? `Olá, ${d.clientName}! Segue o orçamento 😊` : `Olá! Segue o orçamento 😊`,
+    d.clientName ? `${t("Olá, {nome}! Segue o orçamento", { nome: d.clientName })} 😊` : `${t("Olá! Segue o orçamento")} 😊`,
     ``,
-    `🧾 *${r.jobName}*`,
-    `🧵 Material: ${r.materialName}`,
+    `🧾 *${t(r.jobName)}*`,
+    `🧵 ${t("Material")}: ${t(r.materialName)}`,
   ];
-  if (r.quantity > 1) lines.push(`🔢 Quantidade: ${piecesLabel(r.quantity)}`);
-  if (d.deliveryTime) lines.push(`📅 Prazo: ${d.deliveryTime}`);
-  if (r.quantity > 1) lines.push(``, `💵 Valor por peça: ${brl(r.finalPrice)}`, `💰 *Total: ${brl(r.plateTotal)}*`);
-  else lines.push(``, `💰 *Valor: ${brl(r.finalPrice)}*`);
-  if (d.validUntil) lines.push(`⏳ Válido até ${formatDate(d.validUntil)}`);
+  if (r.quantity > 1) lines.push(`🔢 ${t("Quantidade")}: ${piecesLabel(r.quantity)}`);
+  if (d.deliveryTime) lines.push(`📅 ${t("Prazo")}: ${d.deliveryTime}`);
+  if (r.quantity > 1) lines.push(``, `💵 ${t("Valor por peça")}: ${brl(r.finalPrice)}`, `💰 *${t("Total")}: ${brl(r.plateTotal)}*`);
+  else lines.push(``, `💰 *${t("Valor")}: ${brl(r.finalPrice)}*`);
+  if (d.validUntil) lines.push(`⏳ ${t("Válido até {data}", { data: formatDate(d.validUntil) })}`);
   if (d.notes) lines.push(``, `📝 ${d.notes}`);
 
   const signature = buildStoreSignatureLine(settings);

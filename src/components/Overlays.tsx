@@ -4,6 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { DeviceMobile, Export, Heart, InstagramLogo, X } from "@phosphor-icons/react";
 import type { Toast } from "../lib/useCalculator";
+import { t } from "../lib/i18n";
 
 export function QuickToast({ toast }: { toast: Toast }) {
   const reduce = useReducedMotion();
@@ -11,8 +12,8 @@ export function QuickToast({ toast }: { toast: Toast }) {
   useEffect(() => {
     if (!toast) return;
     setVisible(toast);
-    const t = setTimeout(() => setVisible(null), 3500);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setVisible(null), 3500);
+    return () => clearTimeout(timer);
   }, [toast]);
 
   return (
@@ -44,7 +45,7 @@ function CenterDialog({ open, onOpenChange, title, children, labelledIcon }: {
         <Dialog.Content aria-describedby={undefined}
           className="bezel fixed left-1/2 top-1/2 z-[60] w-[min(400px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 outline-none">
           <div className="bezel-core relative px-6 pb-6 pt-7 text-center">
-            <Dialog.Close className="icon-btn absolute right-2 top-2" aria-label="Fechar"><X size={18} /></Dialog.Close>
+            <Dialog.Close className="icon-btn absolute right-2 top-2" aria-label={t("Fechar")}><X size={18} /></Dialog.Close>
             {labelledIcon && (
               <span className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent-text">{labelledIcon}</span>
             )}
@@ -59,15 +60,15 @@ function CenterDialog({ open, onOpenChange, title, children, labelledIcon }: {
 
 export function SupportDialog({ open, onOpenChange, instagram }: { open: boolean; onOpenChange: (o: boolean) => void; instagram: string }) {
   return (
-    <CenterDialog open={open} onOpenChange={onOpenChange} title="Gostou da calculadora?" labelledIcon={<Heart size={22} weight="fill" />}>
+    <CenterDialog open={open} onOpenChange={onOpenChange} title={t("Gostou da calculadora?")} labelledIcon={<Heart size={22} weight="fill" />}>
       <p className="mx-auto mt-2 max-w-[32ch] text-[15px] leading-[1.5] text-ink-2">
-        Ela é 100% gratuita, feita com carinho pra comunidade 3D. Se quiser apoiar, siga a gente no Instagram.
+        {t("Ela é 100% gratuita, feita com carinho pra comunidade 3D. Se quiser apoiar, siga a gente no Instagram.")}
       </p>
       <div className="mt-6 flex flex-col gap-2">
         <a className="btn btn-primary" href={instagram} target="_blank" rel="noopener noreferrer" onClick={() => onOpenChange(false)}>
-          <InstagramLogo size={19} weight="bold" aria-hidden="true" />Seguir @nossoprojeto3d
+          <InstagramLogo size={19} weight="bold" aria-hidden="true" />{t("Seguir @nossoprojeto3d")}
         </a>
-        <button type="button" className="btn min-h-[44px] text-ink-3 hover:text-ink" onClick={() => onOpenChange(false)}>Agora não</button>
+        <button type="button" className="btn min-h-[44px] text-ink-3 hover:text-ink" onClick={() => onOpenChange(false)}>{t("Agora não")}</button>
       </div>
     </CenterDialog>
   );
@@ -75,13 +76,13 @@ export function SupportDialog({ open, onOpenChange, instagram }: { open: boolean
 
 export function IosInstallDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   return (
-    <CenterDialog open={open} onOpenChange={onOpenChange} title="Instalar na tela de início" labelledIcon={<DeviceMobile size={22} />}>
+    <CenterDialog open={open} onOpenChange={onOpenChange} title={t("Instalar na tela de início")} labelledIcon={<DeviceMobile size={22} />}>
       <ol className="mt-4 flex flex-col gap-3 text-left text-[15px] text-ink-2">
-        <li className="flex gap-3"><span className="num text-accent-text">1</span><span>Toque em <strong className="font-medium text-ink">compartilhar</strong> <Export size={15} className="inline align-[-2px]" aria-label="ícone de compartilhar" /> na barra do Safari.</span></li>
-        <li className="flex gap-3"><span className="num text-accent-text">2</span><span>Escolha <strong className="font-medium text-ink">Adicionar à Tela de Início</strong>.</span></li>
-        <li className="flex gap-3"><span className="num text-accent-text">3</span><span>Toque em <strong className="font-medium text-ink">Adicionar</strong>.</span></li>
+        <li className="flex gap-3"><span className="num text-accent-text">1</span><span>{t("Toque em")} <strong className="font-medium text-ink">{t("compartilhar")}</strong> <Export size={15} className="inline align-[-2px]" aria-label={t("ícone de compartilhar")} /> {t("na barra do Safari.")}</span></li>
+        <li className="flex gap-3"><span className="num text-accent-text">2</span><span>{t("Escolha")} <strong className="font-medium text-ink">{t("Adicionar à Tela de Início")}</strong>.</span></li>
+        <li className="flex gap-3"><span className="num text-accent-text">3</span><span>{t("Toque em")} <strong className="font-medium text-ink">{t("Adicionar")}</strong>.</span></li>
       </ol>
-      <button type="button" className="btn btn-secondary mt-6 w-full" onClick={() => onOpenChange(false)}>Entendi</button>
+      <button type="button" className="btn btn-secondary mt-6 w-full" onClick={() => onOpenChange(false)}>{t("Entendi")}</button>
     </CenterDialog>
   );
 }

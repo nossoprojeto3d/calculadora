@@ -5,6 +5,7 @@ import { Drawer } from "vaul";
 import { X } from "@phosphor-icons/react";
 import { useReducedMotion } from "motion/react";
 import { brl } from "../lib/calc";
+import { t } from "../lib/i18n";
 
 /** true em telas de computador (layout em duas colunas). */
 export function useIsDesktop() {
@@ -125,7 +126,7 @@ export function Sheet({ open, onOpenChange, title, description, children, footer
               <Drawer.Title className="text-[19px] font-semibold tracking-[-0.015em]">{title}</Drawer.Title>
               {description && <Drawer.Description className="hint mt-1">{description}</Drawer.Description>}
             </div>
-            <Drawer.Close className="icon-btn -mr-2 -mt-1" aria-label="Fechar">
+            <Drawer.Close className="icon-btn -mr-2 -mt-1" aria-label={t("Fechar")}>
               <X size={20} />
             </Drawer.Close>
           </div>
@@ -162,10 +163,10 @@ export function AnimatedPrice({ value, className, id }: { value: number; classNa
     const duration = 550;
     let frame = 0;
     const tick = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 4);
-      node.textContent = brl(t < 1 ? from + (value - from) * eased : value);
-      if (t < 1) frame = requestAnimationFrame(tick);
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 4);
+      node.textContent = brl(p < 1 ? from + (value - from) * eased : value);
+      if (p < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(frame); node.textContent = brl(value); };

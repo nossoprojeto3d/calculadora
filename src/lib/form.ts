@@ -9,6 +9,7 @@
      (só da primeira vez) e uma desliga a outra.
    ========================================================= */
 
+import { t } from "./i18n";
 import { MATERIALS, PRINTERS, PRO_COSTS, type ProCostId } from "./data";
 import {
   PLATE_QTY_MAX, computeAutoWearValue, computeMarketplaceFeeBase, emptyValues, getMeliAdTypeRate, hasCalculablePrintJob,
@@ -153,7 +154,7 @@ function toggleCost(state: FormState, cost: ProCostId, on: boolean, settings: St
       s.values[proFieldId(other)] = "";
       s.errors = s.errors.filter((e) => e !== proFieldId(other));
       s.notice = {
-        text: `${other === "meli" ? "Taxa Mercado Livre" : "Taxa Shopee"} desligada: só dá pra usar uma taxa de marketplace por vez.`,
+        text: t("{taxa} desligada: só dá pra usar uma taxa de marketplace por vez.", { taxa: other === "meli" ? t("Taxa Mercado Livre") : t("Taxa Shopee") }),
         at: Date.now(),
       };
     }
@@ -258,7 +259,7 @@ export function formReducer(state: FormState, action: FormAction): FormState {
       set("materialSelect", "pla-basic");
       set("pricePerKg", "109.90");
       set("kwhPrice", String(v.kwhPrice || "").trim() || "0.85");
-      set("jobName", "Suporte de celular");
+      set("jobName", t("Suporte de celular"));
       set("plateQty", "1");
       set("printHours", "2");
       set("printMinutes", "30");
@@ -269,8 +270,8 @@ export function formReducer(state: FormState, action: FormAction): FormState {
       // dados para o cliente (só nos campos vazios), pra mostrar o orçamento do cliente completo
       const setIfEmpty = (id: string, value: string) => { if (!String(v[id] ?? "").trim()) set(id, value); };
       setIfEmpty("clientName", "Maria");
-      setIfEmpty("deliveryTime", "5 dias úteis");
-      setIfEmpty("notes", "Cor preta, pagamento no Pix.");
+      setIfEmpty("deliveryTime", t("5 dias úteis"));
+      setIfEmpty("notes", t("Cor preta, pagamento no Pix."));
       return ensureTiers({ ...s, errors: [] }, action.settings);
     }
   }

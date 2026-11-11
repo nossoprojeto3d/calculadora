@@ -7,6 +7,7 @@ import { buildClientWhatsAppText, clientWhatsAppHref, getClientDetails, hasStore
 import { exportClientPdf, exportPdf } from "../lib/pdf";
 import { KEYS, read, track, write } from "../lib/storage";
 import type { Calculator } from "../lib/useCalculator";
+import { t } from "../lib/i18n";
 import { AnimatedPrice } from "./ui";
 
 const SLICE_COLORS: Record<string, string> = {
@@ -18,11 +19,11 @@ const SLICE_COLORS: Record<string, string> = {
 /** Partes do preço: filamento, energia, cada custo profissional e lucro (só as maiores que zero). */
 function buildSlices(r: CalcResult) {
   const slices = [
-    { label: "Filamento", value: r.filamentCost, color: "var(--c-filament)" },
-    { label: "Energia", value: r.energyCost, color: "var(--c-energy)" },
+    { label: t("Filamento"), value: r.filamentCost, color: "var(--c-filament)" },
+    { label: t("Energia"), value: r.energyCost, color: "var(--c-energy)" },
   ];
-  if (r.proMode) r.proCosts.forEach((c) => slices.push({ label: c.label, value: c.value, color: SLICE_COLORS[c.id] }));
-  slices.push({ label: "Lucro", value: r.profit, color: "var(--c-profit)" });
+  if (r.proMode) r.proCosts.forEach((c) => slices.push({ label: t(c.label), value: c.value, color: SLICE_COLORS[c.id] }));
+  slices.push({ label: t("Lucro"), value: r.profit, color: "var(--c-profit)" });
   return slices.filter((s) => s.value > 0);
 }
 
@@ -146,7 +147,7 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
   const total = slices.reduce((s, x) => s + x.value, 0);
 
   return (
-    <section id="orcamento" ref={sectionRef} className="bezel lg:flex lg:min-h-0 lg:flex-[0_1_auto] lg:flex-col" aria-label="Orçamento" aria-live="polite">
+    <section id="orcamento" ref={sectionRef} className="bezel lg:flex lg:min-h-0 lg:flex-[0_1_auto] lg:flex-col" aria-label={t("Orçamento")} aria-live="polite">
       <div className="bezel-core relative overflow-hidden lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
         {/* brilho sutil quando o orçamento fica pronto */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-40 transition-opacity duration-700"
@@ -158,20 +159,20 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
           <div className="flex items-center justify-between gap-3">
             <span className="inline-flex items-center gap-2 text-[13px] font-medium text-ink-2">
               <span className={`size-2 rounded-full ${ready ? "bg-ok" : r ? "bg-[var(--c-energy)]" : "bg-line-strong"}`} aria-hidden="true" />
-              {r ? (ready ? "Orçamento pronto" : "Falta preencher") : "Aguardando dados"}
+              {r ? (ready ? t("Orçamento pronto") : t("Falta preencher")) : t("Aguardando dados")}
             </span>
             {!r && <span className="num text-[13px] text-ink-3">{done}/{progress.length}</span>}
           </div>
 
           <div className="mt-4 flex items-center gap-2 rp-mt">
             <p className="min-w-0 flex-1 truncate text-[14px] text-ink-2">
-              {!r ? "Preço sugerido"
-                : [r.customPrice ? "Seu preço" : r.hasCustomName ? r.jobName : r.quantity > 1 ? "Preço" : "Preço sugerido", r.quantity > 1 ? "por peça" : ""].filter(Boolean).join(" · ")}
+              {!r ? t("Preço sugerido")
+                : [r.customPrice ? t("Seu preço") : r.hasCustomName ? r.jobName : r.quantity > 1 ? t("Preço") : t("Preço sugerido"), r.quantity > 1 ? t("por peça") : ""].filter(Boolean).join(" · ")}
             </p>
             {r && !editing && (
               <button type="button" onClick={startEdit} className="rp-edit inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-accent-text hover:bg-accent-soft"
-                aria-label="Editar preço de venda">
-                <PencilSimple size={15} aria-hidden="true" />Editar preço
+                aria-label={t("Editar preço de venda")}>
+                <PencilSimple size={15} aria-hidden="true" />{t("Editar preço")}
               </button>
             )}
           </div>
@@ -179,7 +180,7 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
             <form className="mt-1 flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); commitEdit(); }}>
               <label className="field-box flex min-w-0 flex-1 items-center gap-1.5" style={{ boxShadow: "inset 0 0 0 1.5px var(--accent)" }}>
                 <span className="num text-[22px] font-semibold text-ink-3">{simboloMoeda()}</span>
-                <input ref={editRef} id="salePrice" inputMode="decimal" autoComplete="off" aria-label="Seu preço de venda"
+                <input ref={editRef} id="salePrice" inputMode="decimal" autoComplete="off" aria-label={t("Seu preço de venda")}
                   className="num min-w-0 flex-1 bg-transparent text-[30px] font-semibold tracking-[-0.03em] text-ink outline-none"
                   value={draft} onChange={(e) => setDraft(e.target.value.replace(/[^\d,.]/g, ""))}
                   onBlur={commitEdit} onKeyDown={(e) => { if (e.key === "Escape") { cancelEdit.current = true; e.currentTarget.blur(); } }} />
@@ -197,21 +198,21 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
           )}
           {r && r.customPrice && (
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[13px] text-ink-3">
-              <span>Sugerido <span className="num">{brl(r.suggestedPrice)}</span></span>
+              <span>{t("Sugerido")} <span className="num">{brl(r.suggestedPrice)}</span></span>
               <button type="button" onClick={() => calc.set("salePrice", "")} className="inline-flex min-h-[32px] items-center gap-1 font-medium text-accent-text hover:underline">
-                <ArrowCounterClockwise size={13} aria-hidden="true" />Usar sugerido
+                <ArrowCounterClockwise size={13} aria-hidden="true" />{t("Usar sugerido")}
               </button>
             </p>
           )}
           {r && !r.customPrice && r.shouldRound && r.roundingDiff > 0.001 && (
             <p className="mt-1.5 text-[13px] text-ink-3">
-              Calculado <span className="num">{brl(r.calculatedPrice)}</span>, arredondado <span className="num">+{brl(r.roundingDiff)}</span>
+              {t("Calculado")} <span className="num">{brl(r.calculatedPrice)}</span>, {t("arredondado")} <span className="num">+{brl(r.roundingDiff)}</span>
             </p>
           )}
           {r && r.profit < 0 && (
             <p className="mt-2 flex items-center gap-1.5 text-[13.5px] font-medium text-danger" role="status">
               <Warning size={16} className="shrink-0" aria-hidden="true" />
-              <span>Abaixo do custo: prejuízo de <span className="num">{brl(-r.profit)}</span>{r.quantity > 1 ? " por peça" : ""}.</span>
+              <span>{t("Abaixo do custo: prejuízo de")} <span className="num">{brl(-r.profit)}</span>{r.quantity > 1 ? ` ${t("por peça")}` : ""}.</span>
             </p>
           )}
 
@@ -219,7 +220,7 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
             {!r ? (
               <m.div key="empty" initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 exit={reduce ? undefined : { opacity: 0, y: -6 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <p className="mt-5 text-[14.5px] text-ink-2 rp-mt rp-hide2">Preencha os dados e o preço aparece aqui, ao vivo.</p>
+                <p className="mt-5 text-[14.5px] text-ink-2 rp-mt rp-hide2">{t("Preencha os dados e o preço aparece aqui, ao vivo.")}</p>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-3" aria-hidden="true">
                   <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${(done / progress.length) * 100}%` }} />
                 </div>
@@ -242,9 +243,9 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
                 exit={reduce ? undefined : { opacity: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
                 <dl className="mt-5 grid grid-cols-3 gap-2 rp-mt">
                   {[
-                    { k: "Custo", v: brl(r.totalCost) },
-                    { k: "Lucro", v: brl(r.profit), accent: r.profit >= 0, danger: r.profit < 0 },
-                    { k: "Lucro/hora", v: r.totalHours > 0 ? brl(r.profit / r.totalHours) : "-", danger: r.profit < 0 },
+                    { k: t("Custo"), v: brl(r.totalCost) },
+                    { k: t("Lucro"), v: brl(r.profit), accent: r.profit >= 0, danger: r.profit < 0 },
+                    { k: t("Lucro/hora"), v: r.totalHours > 0 ? brl(r.profit / r.totalHours) : "-", danger: r.profit < 0 },
                   ].map((s) => (
                     <div key={s.k} className="rp-stat rounded-2xl bg-surface-2 px-3 py-3" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
                       <dt className="text-[12.5px] text-ink-3">{s.k}</dt>
@@ -256,10 +257,10 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
                 {total > 0 && (
                   <div className="mt-5 rp-mt">
                     <div className="flex items-baseline justify-between gap-2 text-[13px]">
-                      <span className="font-medium text-ink-2">Composição do preço</span>
-                      {r.profit > 0 && <span className="text-ink-3">lucro = {Math.round((r.profit / r.finalPrice) * 100)}% do preço</span>}
+                      <span className="font-medium text-ink-2">{t("Composição do preço")}</span>
+                      {r.profit > 0 && <span className="text-ink-3">{t("lucro = {pct}% do preço", { pct: Math.round((r.profit / r.finalPrice) * 100) })}</span>}
                     </div>
-                    <div className="mt-2.5 flex h-3 gap-[3px] overflow-hidden rounded-full" role="img" aria-label="Composição do preço">
+                    <div className="mt-2.5 flex h-3 gap-[3px] overflow-hidden rounded-full" role="img" aria-label={t("Composição do preço")}>
                       {slices.map((s) => (
                         <span key={s.label} className="h-full rounded-[3px] transition-[flex-grow] duration-500 ease-[var(--ease-out-soft)] first:rounded-l-full last:rounded-r-full"
                           style={{ flexGrow: s.value, flexBasis: 0, background: s.color }} title={s.label} />
@@ -280,7 +281,7 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
 
                 <p className="mono mt-4 text-[12px] text-ink-3 rp-mt rp-hide2">
                   {r.quantity > 1
-                    ? `Mesa: ${piecesLabel(r.quantity)} · ${formatGrams(r.grams)} g · ${formatPrintTime(r.hours, r.minutes)}`
+                    ? `${t("Mesa:")} ${piecesLabel(r.quantity)} · ${formatGrams(r.grams)} g · ${formatPrintTime(r.hours, r.minutes)}`
                     : `${r.grams.toLocaleString("pt-BR")} g · ${r.energyKwh.toFixed(2).replace(".", ",")} kWh · ${formatPrintTime(r.hours, r.minutes)}`}
                 </p>
               </m.div>
@@ -296,19 +297,19 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
                 className="rp-reminder flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13.5px] text-ink-2 hover:text-ink"
                 style={{ background: "color-mix(in oklab, var(--c-energy) 14%, transparent)" }}>
                 <Warning size={18} className="shrink-0 text-[var(--c-energy)]" aria-hidden="true" />
-                <span className="flex-1">Falta preencher: {pendingPro.map((c) => c.label).join(", ")}. O preço ainda não conta {pendingPro.length > 1 ? "esses custos" : "esse custo"}.</span>
-                <span className="font-semibold text-ink">Preencher</span>
+                <span className="flex-1">{t("Falta preencher:")} {pendingPro.map((c) => t(c.label)).join(", ")}. {t("O preço ainda não conta")} {pendingPro.length > 1 ? t("esses custos") : t("esse custo")}.</span>
+                <span className="font-semibold text-ink">{t("Preencher")}</span>
               </button>
             )}
             <div className="rp-share flex flex-col gap-2">
-              <span id="compartilhar-label" className="rp-sharelabel px-1 text-[14px] font-medium text-ink-2">Compartilhar <span className="rp-hide3">orçamento </span>{forClient ? "com:" : "para:"}</span>
+              <span id="compartilhar-label" className="rp-sharelabel px-1 text-[14px] font-medium text-ink-2">{t("Compartilhar")} <span className="rp-hide3">{t("orçamento")} </span>{forClient ? t("com:") : t("para:")}</span>
               <div className="rp-sharetoggle grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
                 role="radiogroup" aria-labelledby="compartilhar-label">
                 {(["completo", "cliente"] as const).map((v) => (
                   <button key={v} type="button" role="radio" aria-checked={version === v} onClick={() => setVersion(v)}
                     className={`rp-sharebtn min-h-[40px] whitespace-nowrap rounded-full text-[14px] font-medium transition-colors ${version === v ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink"}`}
                     style={version === v ? { boxShadow: "inset 0 0 0 1px var(--line-strong)" } : undefined}>
-                    {v === "cliente" ? "Cliente" : "Mim (completo)"}
+                    {v === "cliente" ? t("Cliente") : t("Mim (completo)")}
                   </button>
                 ))}
               </div>
@@ -317,8 +318,8 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
               <button type="button" onClick={onOpenSettings}
                 className="rp-reminder flex items-center gap-2.5 rounded-xl bg-accent-soft px-3 py-2.5 text-left text-[13.5px] text-ink-2 hover:text-ink">
                 <Storefront size={18} className="shrink-0 text-accent-text" aria-hidden="true" />
-                <span className="flex-1">Coloque o nome e o logo da sua loja no orçamento.</span>
-                <span className="font-semibold text-accent-text">Configurar</span>
+                <span className="flex-1">{t("Coloque o nome e o logo da sua loja no orçamento.")}</span>
+                <span className="font-semibold text-accent-text">{t("Configurar")}</span>
               </button>
             )}
             <div className="rp-sendrow flex flex-col gap-2.5">
@@ -332,28 +333,28 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
               onClick={() => saveBudget({ silent: true })}
             >
               <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
-              {forClient ? "Enviar ao cliente" : "Enviar no WhatsApp"}
+              {forClient ? t("Enviar ao cliente") : t("Enviar no WhatsApp")}
             </a>
             <div className="rp-btnrow grid grid-cols-3 gap-2">
               <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!ready} onClick={copy}
-                aria-label={copied ? "Copiado" : "Copiar"} data-tip={copied ? "Copiado" : "Copiar"}>
+                aria-label={copied ? t("Copiado") : t("Copiar")} data-tip={copied ? t("Copiado") : t("Copiar")}>
                 {copied ? <Check size={17} weight="bold" className="text-ok" aria-hidden="true" /> : <Copy size={17} aria-hidden="true" />}
-                <span className="rp-btnlabel">{copied ? "Copiado" : "Copiar"}</span>
+                <span className="rp-btnlabel">{copied ? t("Copiado") : t("Copiar")}</span>
               </button>
               <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!ready || pdfState === "busy"} onClick={pdf}
-                aria-label={pdfState === "busy" ? "Gerando PDF" : "PDF"} data-tip={pdfState === "busy" ? "Gerando PDF" : "Baixar PDF"}>
+                aria-label={pdfState === "busy" ? t("Gerando PDF") : "PDF"} data-tip={pdfState === "busy" ? t("Gerando PDF") : t("Baixar PDF")}>
                 <FilePdf size={17} aria-hidden="true" />
-                <span className="rp-btnlabel">{pdfState === "busy" ? "Gerando" : "PDF"}</span>
+                <span className="rp-btnlabel">{pdfState === "busy" ? t("Gerando") : "PDF"}</span>
               </button>
               <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!ready} onClick={() => saveBudget()}
-                aria-label={budgetId ? "Salvo" : "Salvar"} data-tip={budgetId ? "Salvo em Meus orçamentos" : "Salvar em Meus orçamentos"}>
+                aria-label={budgetId ? t("Salvo") : t("Salvar")} data-tip={budgetId ? t("Salvo em Meus orçamentos") : t("Salvar em Meus orçamentos")}>
                 <BookmarkSimple size={17} weight={budgetId ? "fill" : "regular"} className={budgetId ? "text-accent-text" : undefined} aria-hidden="true" />
-                <span className="rp-btnlabel">{budgetId ? "Salvo" : "Salvar"}</span>
+                <span className="rp-btnlabel">{budgetId ? t("Salvo") : t("Salvar")}</span>
               </button>
             </div>
             </div>
             {pdfState === "error" && (
-              <p className="error-text" role="alert">Não foi possível gerar o PDF. Verifique sua internet e tente de novo.</p>
+              <p className="error-text" role="alert">{t("Não foi possível gerar o PDF. Verifique sua internet e tente de novo.")}</p>
             )}
           </div>
         </div>

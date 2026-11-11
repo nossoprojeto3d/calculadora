@@ -15,6 +15,7 @@ import {
   GROUP1_PRO_COST_IDS, MATERIALS, MELI_DEFAULT_SETTINGS, MELI_PRICE_THRESHOLD, PRINTERS, PRO_COSTS,
   SHOPEE_DEFAULT_TIERS, SHOPEE_TIER_RANGES, type ProCost, type ProCostId,
 } from "./data";
+import { t } from "./i18n";
 
 export type Mode = "basico" | "profissional";
 export type ShopeeTier = 0 | 1 | 2 | "custom" | null;
@@ -134,7 +135,7 @@ export function getSelectedPrinter(v: FormValues): SelectedPrinter | null {
     const price = parseFloat(str(v, "customPrinterPrice")) || 0;
     return {
       id: CUSTOM_PRINTER_ID,
-      name: `Outra impressora (${power}W)`,
+      name: t("Outra impressora ({w}W)", { w: power }),
       power,
       avgPurchasePrice: price,
       avgLifespanHours: CUSTOM_PRINTER_LIFESPAN_HOURS,
@@ -545,11 +546,11 @@ export function calculate(rawValues: FormValues, mode: Mode, settings: StoreSett
 
   const selectedMaterial = MATERIALS.find((m) => m.id === str(v, "materialSelect"))!;
   const materialName = selectedMaterial.id === "outro"
-    ? (str(v, "customMaterialName").trim() || "Outro (personalizado)")
-    : selectedMaterial.name;
+    ? (str(v, "customMaterialName").trim() || t("Outro (personalizado)"))
+    : t(selectedMaterial.name);
 
   const base = {
-    jobName: str(v, "jobName").trim() || DEFAULT_JOB_NAME,
+    jobName: str(v, "jobName").trim() || t(DEFAULT_JOB_NAME),
     hasCustomName: str(v, "jobName").trim() !== "",
     totalHours,
     quantity: qty,
@@ -614,7 +615,7 @@ export const formatPrintTime = (hours: number, minutes: number) => `${hours}h${S
 /** Tempo por peça, que pode ter fração de minuto: "9min", "1h 05min". */
 export function formatDuration(totalMinutes: number) {
   const rounded = Math.round(totalMinutes);
-  if (rounded < 1) return "menos de 1min";
+  if (rounded < 1) return t("menos de 1min");
   const h = Math.floor(rounded / 60);
   const m = rounded % 60;
   return h ? `${h}h ${String(m).padStart(2, "0")}min` : `${m}min`;
@@ -624,7 +625,7 @@ export function formatDuration(totalMinutes: number) {
 export const formatGrams = (g: number) => g.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 
 /** "20 peças" */
-export const piecesLabel = (qty: number) => `${qty} ${qty === 1 ? "peça" : "peças"}`;
+export const piecesLabel = (qty: number) => qty === 1 ? t("{n} peça", { n: qty }) : t("{n} peças", { n: qty });
 
 /** Assinatura da loja: só o que estiver preenchido. */
 export function buildStoreSignatureLine(settings: StoreSettings) {
@@ -646,47 +647,47 @@ export function buildWhatsAppText(r: CalcResult, settings: StoreSettings) {
     ? r.proCosts.map((c) => {
         if (c.unit === "laborMinutes") {
           return plate
-            ? `${c.emoji} ${c.label}: ${brl(c.value)} (${c.rawValue}min de preparo da mesa × ${brl(c.hourlyRate)}/h ÷ ${piecesLabel(r.quantity)})`
-            : `${c.emoji} ${c.label}: ${brl(c.value)} (${c.rawValue}min de preparo × ${brl(c.hourlyRate)}/h)`;
+            ? `${c.emoji} ${t(c.label)}: ${brl(c.value)} (${t("{min}min de preparo da mesa × {taxa}/h ÷ {pecas}", { min: c.rawValue, taxa: brl(c.hourlyRate), pecas: piecesLabel(r.quantity) })})`
+            : `${c.emoji} ${t(c.label)}: ${brl(c.value)} (${t("{min}min de preparo × {taxa}/h", { min: c.rawValue, taxa: brl(c.hourlyRate) })})`;
         }
-        if (c.id === "meli") return `${c.emoji} ${c.label}: ${brl(c.value)} (anúncio ${c.adType === "classico" ? "Clássico" : "Premium"})`;
-        return `${c.emoji} ${c.label}: ${brl(c.value)}`;
+        if (c.id === "meli") return `${c.emoji} ${t(c.label)}: ${brl(c.value)} (${t("anúncio {tipo}", { tipo: c.adType === "classico" ? t("Clássico") : t("Premium") })})`;
+        return `${c.emoji} ${t(c.label)}: ${brl(c.value)}`;
       })
     : [];
 
   const lines = plate ? [
-    `🧾 *Orçamento — ${r.jobName}*`,
+    `🧾 *${t("Orçamento")} — ${t(r.jobName)}*`,
     ``,
-    `🖨️ Impressora: ${r.printerName}`,
-    `🧵 Material: ${r.materialName}`,
-    `🔢 Peças na mesa: ${r.quantity}`,
-    `⏱️ Tempo da mesa: ${timeLabel} (${formatDuration(r.pieceMinutes)} por peça)`,
-    `⚖️ Peso da mesa: ${formatGrams(r.grams)} g (${formatGrams(r.pieceGrams)} g por peça)`,
+    `🖨️ ${t("Impressora")}: ${r.printerName}`,
+    `🧵 ${t("Material")}: ${t(r.materialName)}`,
+    `🔢 ${t("Peças na mesa")}: ${r.quantity}`,
+    `⏱️ ${t("Tempo da mesa")}: ${timeLabel} (${t("{tempo} por peça", { tempo: formatDuration(r.pieceMinutes) })})`,
+    `⚖️ ${t("Peso da mesa")}: ${formatGrams(r.grams)} g (${t("{peso} g por peça", { peso: formatGrams(r.pieceGrams) })})`,
     ``,
-    `*Custos por peça*`,
-    `🧵 Filamento: ${brl(r.filamentCost)}`,
-    `⚡ Energia: ${brl(r.energyCost)} (${r.energyKwh.toFixed(2).replace(".", ",")} kWh)`,
+    `*${t("Custos por peça")}*`,
+    `🧵 ${t("Filamento")}: ${brl(r.filamentCost)}`,
+    `⚡ ${t("Energia")}: ${brl(r.energyCost)} (${r.energyKwh.toFixed(2).replace(".", ",")} kWh)`,
     ...proLines,
-    `📦 Custo total: ${brl(r.totalCost)}`,
-    `📈 Lucro: ${brl(r.profit)}`,
+    `📦 ${t("Custo total")}: ${brl(r.totalCost)}`,
+    `📈 ${t("Lucro")}: ${brl(r.profit)}`,
     ``,
-    `✅ *Preço por peça: ${brl(r.finalPrice)}*`,
-    `🧮 *Total (${piecesLabel(r.quantity)}): ${brl(r.plateTotal)}*`,
+    `✅ *${t("Preço por peça")}: ${brl(r.finalPrice)}*`,
+    `🧮 *${t("Total")} (${piecesLabel(r.quantity)}): ${brl(r.plateTotal)}*`,
   ] : [
-    `🧾 *Orçamento — ${r.jobName}*`,
+    `🧾 *${t("Orçamento")} — ${t(r.jobName)}*`,
     ``,
-    `🖨️ Impressora: ${r.printerName}`,
-    `🧵 Material: ${r.materialName}`,
-    `⏱️ Tempo de impressão: ${timeLabel}`,
+    `🖨️ ${t("Impressora")}: ${r.printerName}`,
+    `🧵 ${t("Material")}: ${t(r.materialName)}`,
+    `⏱️ ${t("Tempo de impressão")}: ${timeLabel}`,
     ``,
-    `*Custos*`,
-    `🧵 Filamento: ${brl(r.filamentCost)} (${r.grams.toLocaleString("pt-BR")} g utilizados)`,
-    `⚡ Energia: ${brl(r.energyCost)} (${r.energyKwh.toFixed(2).replace(".", ",")} kWh consumidos)`,
+    `*${t("Custos")}*`,
+    `🧵 ${t("Filamento")}: ${brl(r.filamentCost)} (${t("{peso} g utilizados", { peso: r.grams.toLocaleString("pt-BR") })})`,
+    `⚡ ${t("Energia")}: ${brl(r.energyCost)} (${t("{kwh} kWh consumidos", { kwh: r.energyKwh.toFixed(2).replace(".", ",") })})`,
     ...proLines,
-    `📦 Custo total: ${brl(r.totalCost)}`,
-    `📈 Lucro: ${brl(r.profit)}`,
+    `📦 ${t("Custo total")}: ${brl(r.totalCost)}`,
+    `📈 ${t("Lucro")}: ${brl(r.profit)}`,
     ``,
-    `✅ *Preço final: ${brl(r.finalPrice)}*`,
+    `✅ *${t("Preço final")}: ${brl(r.finalPrice)}*`,
   ];
 
   const signature = buildStoreSignatureLine(settings);
@@ -710,16 +711,16 @@ export function getProgressItems(v: FormValues, mode: Mode) {
     && (str(v, "materialSelect") !== "outro" || str(v, "customMaterialName").trim() !== "");
 
   return [
-    { id: "printerSelect", label: "Impressora", done: !!getSelectedPrinter(v) },
-    { id: "kwhPrice", label: "Energia", done: Number(str(v, "kwhPrice")) > 0 },
-    { id: "materialSelect", label: "Material", done: materialOk },
-    { id: "pricePerKg", label: "Preço do filamento", done: Number(str(v, "pricePerKg")) > 0 },
-    { id: "printHours", label: "Tempo", done: timeOk },
-    { id: "printGrams", label: "Peso", done: Number(str(v, "printGrams")) > 0 },
-    { id: "marginPct", label: "Margem", done: (pctVal !== "" && Number(pctVal) >= 0) || (fixedVal !== "" && Number(fixedVal) >= 0) },
+    { id: "printerSelect", label: t("Impressora"), done: !!getSelectedPrinter(v) },
+    { id: "kwhPrice", label: t("Energia"), done: Number(str(v, "kwhPrice")) > 0 },
+    { id: "materialSelect", label: t("Material"), done: materialOk },
+    { id: "pricePerKg", label: t("Preço do filamento"), done: Number(str(v, "pricePerKg")) > 0 },
+    { id: "printHours", label: t("Tempo"), done: timeOk },
+    { id: "printGrams", label: t("Peso"), done: Number(str(v, "printGrams")) > 0 },
+    { id: "marginPct", label: t("Margem"), done: (pctVal !== "" && Number(pctVal) >= 0) || (fixedVal !== "" && Number(fixedVal) >= 0) },
     ...(mode === "profissional"
       ? PRO_COSTS.filter((c) => bool(v, proToggleId(c.id))).map((c) => ({
-          id: proFieldId(c.id), label: c.label, done: Number(str(v, proFieldId(c.id))) > 0,
+          id: proFieldId(c.id), label: t(c.label), done: Number(str(v, proFieldId(c.id))) > 0,
         }))
       : []),
   ];

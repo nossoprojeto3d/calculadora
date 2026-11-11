@@ -5,6 +5,7 @@ import { brl } from "../lib/calc";
 import { formatSavedDate } from "../lib/storage";
 import type { Calculator } from "../lib/useCalculator";
 import { Sheet } from "./ui";
+import { t } from "../lib/i18n";
 
 export function HistorySheet({ calc, open, onOpenChange, onOpened }: {
   calc: Calculator; open: boolean; onOpenChange: (o: boolean) => void; onOpened: () => void;
@@ -22,37 +23,37 @@ export function HistorySheet({ calc, open, onOpenChange, onOpened }: {
   };
 
   return (
-    <Sheet open={open} onOpenChange={close} title="Meus orçamentos" description="Salvos só neste aparelho."
+    <Sheet open={open} onOpenChange={close} title={t("Meus orçamentos")} description={t("Salvos só neste aparelho.")}
       footer={history.length ? (
         <button type="button" onClick={calc.clearHistory}
           className="inline-flex min-h-[44px] items-center gap-2 rounded-full px-3 text-[14.5px] font-medium text-danger hover:bg-danger-soft">
-          <Trash size={17} aria-hidden="true" />Limpar tudo
+          <Trash size={17} aria-hidden="true" />{t("Limpar tudo")}
         </button>
       ) : undefined}>
       {history.length >= 5 && (
         <label className="field-box mb-4">
           <MagnifyingGlass size={18} className="text-ink-3" aria-hidden="true" />
-          <input className="text" type="search" placeholder="Buscar orçamento" aria-label="Buscar orçamento"
+          <input className="text" type="search" placeholder={t("Buscar orçamento")} aria-label={t("Buscar orçamento")}
             value={query} onChange={(e) => setQuery(e.target.value)} />
         </label>
       )}
 
       {!history.length && clearedBackup ? (
         <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-          <p className="font-medium">Tudo apagado</p>
-          <p className="hint">{clearedBackup.list.length} orçamento{clearedBackup.list.length > 1 ? "s" : ""} removido{clearedBackup.list.length > 1 ? "s" : ""}.</p>
-          <button type="button" className="btn btn-secondary min-h-[44px]" onClick={calc.undoClearHistory}>Desfazer</button>
+          <p className="font-medium">{t("Tudo apagado")}</p>
+          <p className="hint">{clearedBackup.list.length > 1 ? t("{n} orçamentos removidos.", { n: clearedBackup.list.length }) : t("{n} orçamento removido.", { n: clearedBackup.list.length })}</p>
+          <button type="button" className="btn btn-secondary min-h-[44px]" onClick={calc.undoClearHistory}>{t("Desfazer")}</button>
         </div>
       ) : !history.length ? (
         <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
           <span className="flex size-12 items-center justify-center rounded-2xl bg-surface-2 text-ink-3" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
             <BookmarkSimple size={22} aria-hidden="true" />
           </span>
-          <p className="font-medium">Nenhum orçamento salvo ainda</p>
-          <p className="hint max-w-[34ch]">Depois de calcular, toque em Salvar. Ao enviar pelo WhatsApp, copiar ou gerar o PDF, ele também é salvo aqui.</p>
+          <p className="font-medium">{t("Nenhum orçamento salvo ainda")}</p>
+          <p className="hint max-w-[34ch]">{t("Depois de calcular, toque em Salvar. Ao enviar pelo WhatsApp, copiar ou gerar o PDF, ele também é salvo aqui.")}</p>
         </div>
       ) : !items.length ? (
-        <p className="hint px-1 py-6">Nada encontrado pra “{query}”.</p>
+        <p className="hint px-1 py-6">{t("Nada encontrado pra “{busca}”.", { busca: query })}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {items.map((b) => (
@@ -63,14 +64,14 @@ export function HistorySheet({ calc, open, onOpenChange, onOpened }: {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15.5px] font-medium">{b.name}{b.client && <span className="font-normal text-ink-3"> · {b.client}</span>}</span>
                   <span className="block truncate text-[13px] text-ink-3">
-                    {(b.qty ?? 1) > 1 && `${b.qty} peças · `}{b.materialName} · {b.time} · {Number(b.grams).toLocaleString("pt-BR")} g · {formatSavedDate(b.savedAt)}
+                    {(b.qty ?? 1) > 1 && `${t("{n} peças", { n: b.qty ?? 1 })} · `}{b.materialName} · {b.time} · {Number(b.grams).toLocaleString("pt-BR")} g · {formatSavedDate(b.savedAt)}
                   </span>
                 </span>
                 <span className="num shrink-0 text-[15px] font-medium">
-                  {brl(Number(b.price) || 0, b.moeda ?? "BRL")}{(b.qty ?? 1) > 1 && <span className="text-[12.5px] font-normal text-ink-3">/peça</span>}
+                  {brl(Number(b.price) || 0, b.moeda ?? "BRL")}{(b.qty ?? 1) > 1 && <span className="text-[12.5px] font-normal text-ink-3">{t("/peça")}</span>}
                 </span>
               </button>
-              <button type="button" className="icon-btn my-auto mr-1 shrink-0 hover:text-danger" aria-label={`Excluir ${b.name}`}
+              <button type="button" className="icon-btn my-auto mr-1 shrink-0 hover:text-danger" aria-label={t("Excluir {nome}", { nome: b.name })}
                 onClick={() => calc.deleteBudget(b.id)}>
                 <Trash size={18} />
               </button>

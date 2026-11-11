@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { CaretDown, Check, MagnifyingGlass } from "@phosphor-icons/react";
 import { CUSTOM_PRINTER_ID, MATERIALS, PRINTERS } from "../lib/data";
 import { brl, moedaAtiva } from "../lib/calc";
+import { t } from "../lib/i18n";
 import { Sheet } from "./ui";
 
 const normalize = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -29,7 +30,7 @@ export function PrinterPicker({ value, customPower, onChange }: {
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="label" id="printerSelect-label">Impressora</span>
+      <span className="label" id="printerSelect-label">{t("Impressora")}</span>
       <button
         id="printerSelect"
         type="button"
@@ -40,19 +41,19 @@ export function PrinterPicker({ value, customPower, onChange }: {
       >
         <span className="flex min-w-0 flex-1 flex-col py-2">
           <span className="truncate text-[16px] font-medium">
-            {value === CUSTOM_PRINTER_ID ? "Outra impressora" : selected?.name}
+            {value === CUSTOM_PRINTER_ID ? t("Outra impressora") : selected?.name}
           </span>
           <span className="truncate text-[13px] text-ink-3">
             {value === CUSTOM_PRINTER_ID
-              ? (Number(customPower) > 0 ? `${customPower}W · informada por você` : "Informe a potência abaixo")
-              : selected?.desc}
+              ? (Number(customPower) > 0 ? t("{potencia}W · informada por você", { potencia: customPower }) : t("Informe a potência abaixo"))
+              : selected && t(selected.desc)}
           </span>
         </span>
         <CaretDown size={18} className="shrink-0 text-ink-3" aria-hidden="true" />
       </button>
 
-      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }} title="Escolha a impressora"
-        description="A potência entra no cálculo da energia.">
+      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }} title={t("Escolha a impressora")}
+        description={t("A potência entra no cálculo da energia.")}>
         <div className="sticky top-0 z-10 -mx-1 bg-surface px-1 pb-3">
           <label className="field-box">
             <MagnifyingGlass size={18} className="text-ink-3" aria-hidden="true" />
@@ -60,8 +61,8 @@ export function PrinterPicker({ value, customPower, onChange }: {
               className="text"
               type="search"
               inputMode="search"
-              placeholder="Buscar modelo ou marca"
-              aria-label="Buscar impressora"
+              placeholder={t("Buscar modelo ou marca")}
+              aria-label={t("Buscar impressora")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -78,7 +79,7 @@ export function PrinterPicker({ value, customPower, onChange }: {
                       className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-3">
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15.5px] font-medium">{p.name.replace(`${p.brand} `, "")}</span>
-                        <span className="block truncate text-[13px] text-ink-3">{p.desc.replace(/^\d+W · /, "")}</span>
+                        <span className="block truncate text-[13px] text-ink-3">{t(p.desc).replace(/^\d+W · /, "")}</span>
                       </span>
                       <span className="num shrink-0 text-[13px] text-ink-2">{p.power}W</span>
                       <span className="flex size-5 shrink-0 items-center justify-center text-accent-text" aria-hidden="true">
@@ -90,13 +91,13 @@ export function PrinterPicker({ value, customPower, onChange }: {
               </ul>
             </div>
           ))}
-          {!groups.length && <p className="hint px-1">Nenhuma impressora com “{query}”. Use “Outra impressora” abaixo.</p>}
+          {!groups.length && <p className="hint px-1">{t("Nenhuma impressora com “{busca}”. Use “Outra impressora” abaixo.", { busca: query })}</p>}
           <button type="button" onClick={() => choose(CUSTOM_PRINTER_ID)} aria-pressed={value === CUSTOM_PRINTER_ID}
             className="flex min-h-[56px] items-center gap-3 rounded-2xl px-4 text-left transition-colors hover:bg-surface-3"
             style={{ boxShadow: "inset 0 0 0 1px var(--line-strong)" }}>
             <span className="flex-1">
-              <span className="block text-[15.5px] font-medium">Outra impressora</span>
-              <span className="block text-[13px] text-ink-3">Você informa a potência em watts</span>
+              <span className="block text-[15.5px] font-medium">{t("Outra impressora")}</span>
+              <span className="block text-[13px] text-ink-3">{t("Você informa a potência em watts")}</span>
             </span>
             {value === CUSTOM_PRINTER_ID && <Check size={18} weight="bold" className="text-accent-text" />}
           </button>
@@ -125,7 +126,7 @@ export function MaterialPicker({ value, onChange, error }: { value: string; onCh
 
   return (
     <div className="flex flex-col gap-2" data-field="materialSelect">
-      <span className="label" id="materialSelect-label">Tipo de filamento</span>
+      <span className="label" id="materialSelect-label">{t("Tipo de filamento")}</span>
       <button
         id="materialSelect"
         type="button"
@@ -139,21 +140,21 @@ export function MaterialPicker({ value, onChange, error }: { value: string; onCh
         <span className="flex min-w-0 flex-1 flex-col py-2">
           {selected ? (
             <>
-              <span className="truncate text-[16px] font-medium">{selected.name}</span>
+              <span className="truncate text-[16px] font-medium">{t(selected.name)}</span>
               <span className="truncate text-[13px] text-ink-3">
-                {selected.pricePerKg === null ? "Você informa o nome e o preço" : moedaAtiva() === "BRL" ? `${selected.group} · média de ${brl(selected.pricePerKg)}/kg` : selected.group}
+                {selected.pricePerKg === null ? t("Você informa o nome e o preço") : moedaAtiva() === "BRL" ? t("{grupo} · média de {preco}/kg", { grupo: t(selected.group), preco: brl(selected.pricePerKg) }) : t(selected.group)}
               </span>
             </>
           ) : (
-            <span className="truncate py-2.5 text-[16px] text-ink-3">Escolha o filamento</span>
+            <span className="truncate py-2.5 text-[16px] text-ink-3">{t("Escolha o filamento")}</span>
           )}
         </span>
         <CaretDown size={18} className="shrink-0 text-ink-3" aria-hidden="true" />
       </button>
       {error && <p id="materialSelect-error" className="error-text" role="alert">{error}</p>}
 
-      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }} title="Escolha o filamento"
-        description="O preço do kg vem com a média do mercado. Dá pra ajustar depois.">
+      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }} title={t("Escolha o filamento")}
+        description={t("O preço do kg vem com a média do mercado. Dá pra ajustar depois.")}>
         <div className="sticky top-0 z-10 -mx-1 bg-surface px-1 pb-3">
           <label className="field-box">
             <MagnifyingGlass size={18} className="text-ink-3" aria-hidden="true" />
@@ -161,8 +162,8 @@ export function MaterialPicker({ value, onChange, error }: { value: string; onCh
               className="text"
               type="search"
               inputMode="search"
-              placeholder="Buscar filamento"
-              aria-label="Buscar filamento"
+              placeholder={t("Buscar filamento")}
+              aria-label={t("Buscar filamento")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -171,13 +172,13 @@ export function MaterialPicker({ value, onChange, error }: { value: string; onCh
         <div className="flex flex-col gap-5">
           {groups.map((g) => (
             <div key={g.group}>
-              <p className="mb-1.5 px-1 text-[13px] font-medium text-ink-3">{g.group}</p>
+              <p className="mb-1.5 px-1 text-[13px] font-medium text-ink-3">{t(g.group)}</p>
               <ul className="overflow-hidden rounded-2xl bg-surface-2" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
                 {g.items.map((m, i) => (
                   <li key={m.id} className={i ? "border-t border-line" : undefined}>
                     <button type="button" onClick={() => choose(m.id)} aria-pressed={m.id === value}
                       className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-3">
-                      <span className="min-w-0 flex-1 truncate text-[15.5px] font-medium">{m.name}</span>
+                      <span className="min-w-0 flex-1 truncate text-[15.5px] font-medium">{t(m.name)}</span>
                       <span className="num shrink-0 text-[13px] text-ink-2">{brl(m.pricePerKg as number)}/kg</span>
                       <span className="flex size-5 shrink-0 items-center justify-center text-accent-text" aria-hidden="true">
                         {m.id === value && <Check size={18} weight="bold" />}
@@ -188,13 +189,13 @@ export function MaterialPicker({ value, onChange, error }: { value: string; onCh
               </ul>
             </div>
           ))}
-          {!groups.length && <p className="hint px-1">Nenhum filamento com “{query}”. Use “Outro” abaixo.</p>}
+          {!groups.length && <p className="hint px-1">{t("Nenhum filamento com “{busca}”. Use “Outro” abaixo.", { busca: query })}</p>}
           <button type="button" onClick={() => choose("outro")} aria-pressed={value === "outro"}
             className="flex min-h-[56px] items-center gap-3 rounded-2xl px-4 text-left transition-colors hover:bg-surface-3"
             style={{ boxShadow: "inset 0 0 0 1px var(--line-strong)" }}>
             <span className="flex-1">
-              <span className="block text-[15.5px] font-medium">Outro filamento</span>
-              <span className="block text-[13px] text-ink-3">Você informa o nome e o preço do kg</span>
+              <span className="block text-[15.5px] font-medium">{t("Outro filamento")}</span>
+              <span className="block text-[13px] text-ink-3">{t("Você informa o nome e o preço do kg")}</span>
             </span>
             {value === "outro" && <Check size={18} weight="bold" className="text-accent-text" />}
           </button>

@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "@phosphor-icons/react";
+import { t } from "../lib/i18n";
 
 /* Banner discreto de parceiro (link de afiliado), abaixo do orçamento.
    O clique é medido pelo medicao.js via data-evento (sem mexer no arquivo). */
@@ -15,7 +16,7 @@ export function Parceiro() {
       rel="sponsored noopener"
       data-evento="clique_afiliado"
       data-parceiro="voolt3d"
-      aria-label={`Até 8% de desconto em filamentos na Voolt3D com o cupom ${VOOLT.cupom} (abre em nova aba)`}
+      aria-label={t("Até 8% de desconto em filamentos na Voolt3D com o cupom {cupom} (abre em nova aba)", { cupom: VOOLT.cupom })}
       className="parceiro rp-hide3 group mt-3 flex min-h-[52px] items-center gap-3 rounded-2xl border border-line bg-surface-2 px-3 py-2 transition-colors hover:border-accent-line lg:mt-0"
     >
       {/* fundo branco fixo: a logo é roxa e some no tema escuro */}
@@ -24,9 +25,9 @@ export function Parceiro() {
           className="h-auto w-full" loading="lazy" decoding="async" />
       </span>
       <span className="min-w-0 flex-1 leading-tight">
-        <span className="block text-[13.5px] font-medium text-ink">Até 8% off em filamentos</span>
+        <span className="block text-[13.5px] font-medium text-ink">{t("Até 8% off em filamentos")}</span>
         <span className="block text-[12.5px] text-ink-3">
-          cupom <span className="mono font-medium text-accent-text">{VOOLT.cupom}</span>
+          {t("cupom")} <span className="mono font-medium text-accent-text">{VOOLT.cupom}</span>
         </span>
       </span>
       <ArrowUpRight size={16} weight="bold" aria-hidden

@@ -253,7 +253,9 @@ test("10. orçamento para o cliente: sem custos e com os dados da loja", async (
   await page.getByLabel("Escolher logo da loja").setInputFiles("public/assets/logo.png");
   await expect(page.getByRole("img", { name: "Logo da sua loja" })).toBeVisible();
   await page.fill("#settingsStoreName", "Ateliê Camadas");
-  await page.getByRole("dialog").getByRole("button", { name: "Salvar", exact: true }).click();
+  // salva sozinho ao fechar (sem botão "Salvar")
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
   await expect(page.getByText("Coloque o nome e o logo da sua loja")).toHaveCount(0);
   const href2 = await page.getByRole("link", { name: "Enviar ao cliente" }).getAttribute("href");
   expect(decodeURIComponent(href2!)).toContain("🏪 Ateliê Camadas");
@@ -366,4 +368,61 @@ test("15. foto da peça no computador: cola com Ctrl+V / ⌘V", async ({ page, i
     document.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
   });
   await expect(page.getByRole("img", { name: "Foto da peça" })).toBeVisible();
+});
+
+test("16. idiomas e moeda: cabeçalho no computador, engrenagem no celular; pt-BR e real por padrão", async ({ page, isMobile }) => {
+  await page.goto("./");
+  const computador = !isMobile && (page.viewportSize()?.width ?? 0) >= 1024;
+  await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
+  await fillBasic(page);
+  const antes = await price(page);
+
+  // abre o lugar certo de cada aparelho e escolhe o idioma
+  const escolherIdioma = async (nome: RegExp) => {
+    if (computador) {
+      await page.getByRole("button", { name: /^(Idioma|Language):/ }).click();
+      await page.getByRole("menuitemradio", { name: nome }).click();
+    } else {
+      await page.getByRole("button", { name: /^(Configurações|Settings|Definições|Configuración)$/ }).click();
+      await page.getByRole("dialog").getByRole("button", { name: /^(Idioma|Language)/ }).click();
+      await page.getByRole("radio", { name: nome }).click();
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toBeHidden();
+    }
+  };
+
+  if (computador) {
+    await expect(page.getByRole("button", { name: "Moeda: Real" })).toBeVisible();
+  } else {
+    await expect(page.getByRole("button", { name: /^Idioma:/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Moeda:/ })).toHaveCount(0);
+  }
+
+  await escolherIdioma(/English/);
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  // o preço não muda e continua em real
+  expect(await price(page)).toBe(antes);
+  await page.getByRole("radio", { name: "Me (full)" }).click();
+  const href = await page.getByRole("link", { name: "Send on WhatsApp" }).getAttribute("href");
+  const text = decodeURIComponent(href!.split("text=")[1]).replace(/\u00a0/g, " ");
+  expect(text).toContain("Custom part");
+  expect(text).toContain("R$ 21,99");
+  expect(text).not.toContain("�");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+  // sem rolagem horizontal em nenhum idioma (textos mais longos)
+  for (const nome of [/Español/, /Portugal/]) {
+    await escolherIdioma(nome);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
+
+  if (computador) {
+    // moeda pelo cabeçalho: troca o símbolo na hora e fica salva
+    await page.getByRole("button", { name: /^Moeda:/ }).click();
+    await page.getByRole("menuitemradio", { name: /Euro/ }).click();
+    await expect(page.getByRole("button", { name: /^Moeda: Euro/ })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("button", { name: /^Moeda: Euro/ })).toBeVisible();
+  }
 });

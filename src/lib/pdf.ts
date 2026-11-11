@@ -7,6 +7,8 @@
 
 import { brl, buildStoreSignatureLine, formatDuration, formatGrams, piecesLabel, type CalcResult, type StoreSettings } from "./calc";
 import { formatDate, type ClientDetails } from "./cliente";
+import { t, localeDatas } from "./i18n";
+import { DEFAULT_JOB_NAME } from "./data";
 
 function slugify(text: string) {
   const slug = (text || "")
@@ -16,11 +18,11 @@ function slugify(text: string) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return slug || "orcamento";
+  return slug || t("orcamento");
 }
 
 export function exportFileBaseName(r: CalcResult) {
-  return `orcamento-${slugify(r.jobName)}-${r.calculatedAt.toISOString().slice(0, 10)}`;
+  return `${t("orcamento")}-${slugify(r.jobName)}-${r.calculatedAt.toISOString().slice(0, 10)}`;
 }
 
 function loadImageAsDataURL(src: string) {
@@ -57,7 +59,7 @@ function imageSize(dataUrl: string) {
 }
 
 const MARGIN_X = 18;
-const CREDIT = "Orçamento feito com a calculadora Nosso Projeto 3D";
+const credit = () => t("Orçamento feito com a calculadora Nosso Projeto 3D");
 const CREDIT_URL = "https://nossoprojeto3d.com.br/calculadora/";
 
 async function createPdf(header: { title: string; subtitle: string; logo: string | null; logoOnTile?: boolean }) {
@@ -116,7 +118,7 @@ async function createPdf(header: { title: string; subtitle: string; logo: string
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(107, 114, 125);
-      doc.text(`Gerado em ${at.toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" })}`, MARGIN_X, y);
+      doc.text(t("Gerado em {data}", { data: at.toLocaleString(localeDatas(), { dateStyle: "long", timeStyle: "short" }) }), MARGIN_X, y);
       y += 10;
     },
     section(title: string) {
@@ -176,8 +178,8 @@ async function createPdf(header: { title: string; subtitle: string; logo: string
         doc.text(signature, MARGIN_X, y, { maxWidth: contentW });
         y += 6;
       }
-      doc.text(CREDIT, MARGIN_X, y);
-      doc.link(MARGIN_X, y - 3.5, doc.getTextWidth(CREDIT), 4.5, { url: CREDIT_URL });
+      doc.text(credit(), MARGIN_X, y);
+      doc.link(MARGIN_X, y - 3.5, doc.getTextWidth(credit()), 4.5, { url: CREDIT_URL });
     },
   };
   return api;
@@ -189,44 +191,44 @@ const storeSignature = (settings: StoreSettings) => buildStoreSignatureLine(sett
 export async function exportPdf(r: CalcResult, settings: StoreSettings) {
   let logo: string | null = null;
   try { logo = await loadImageAsDataURL(`${import.meta.env.BASE_URL}assets/logo.png`); } catch { /* sem logo */ }
-  const pdf = await createPdf({ title: "Nosso Projeto 3D", subtitle: "Orçamento de impressão 3D", logo });
+  const pdf = await createPdf({ title: "Nosso Projeto 3D", subtitle: t("Orçamento de impressão 3D"), logo });
 
-  pdf.title(r.jobName, r.calculatedAt);
+  pdf.title(t(r.jobName), r.calculatedAt);
 
-  pdf.section("Impressora e material");
-  pdf.row("Impressora", r.printerName);
-  pdf.row("Material", r.materialName);
+  pdf.section(t("Impressora e material"));
+  pdf.row(t("Impressora"), r.printerName);
+  pdf.row(t("Material"), r.materialName);
   pdf.gap(4);
 
   const plate = r.quantity > 1;
-  pdf.section("Tempo e peso");
+  pdf.section(t("Tempo e peso"));
   if (plate) {
-    pdf.row("Peças na mesa", String(r.quantity));
-    pdf.row("Tempo da mesa", `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
-    pdf.row("Peso da mesa", `${formatGrams(r.grams)} g`);
-    pdf.row("Por peça", `${formatDuration(r.pieceMinutes)} · ${formatGrams(r.pieceGrams)} g`);
+    pdf.row(t("Peças na mesa"), String(r.quantity));
+    pdf.row(t("Tempo da mesa"), `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
+    pdf.row(t("Peso da mesa"), `${formatGrams(r.grams)} g`);
+    pdf.row(t("Por peça"), `${formatDuration(r.pieceMinutes)} · ${formatGrams(r.pieceGrams)} g`);
   } else {
-    pdf.row("Tempo de impressão", `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
-    pdf.row("Peso do filamento", `${r.grams.toLocaleString("pt-BR")} g`);
+    pdf.row(t("Tempo de impressão"), `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
+    pdf.row(t("Peso do filamento"), `${r.grams.toLocaleString("pt-BR")} g`);
   }
   pdf.gap(4);
 
-  pdf.section(plate ? "Breakdown de custos por peça" : "Breakdown de custos");
-  pdf.row("Filamento", brl(r.filamentCost));
-  pdf.row("Energia", brl(r.energyCost));
+  pdf.section(plate ? t("Breakdown de custos por peça") : t("Breakdown de custos"));
+  pdf.row(t("Filamento"), brl(r.filamentCost));
+  pdf.row(t("Energia"), brl(r.energyCost));
   if (r.proMode) {
     r.proCosts.forEach((c) => {
-      const label = c.id === "meli" ? `${c.label} (${c.adType === "classico" ? "Clássico" : "Premium"})`
-        : plate && c.id === "labor" ? `${c.label} (preparo da mesa ÷ ${r.quantity})` : c.label;
+      const label = c.id === "meli" ? `${t(c.label)} (${c.adType === "classico" ? t("Clássico") : t("Premium")})`
+        : plate && c.id === "labor" ? t("{rotulo} (preparo da mesa ÷ {n})", { rotulo: t(c.label), n: r.quantity }) : t(c.label);
       pdf.row(label, brl(c.value));
     });
   }
-  pdf.row("Custo total", brl(r.totalCost));
-  pdf.row("Lucro", brl(r.profit));
+  pdf.row(t("Custo total"), brl(r.totalCost));
+  pdf.row(t("Lucro"), brl(r.profit));
   pdf.gap(4);
 
-  if (plate) pdf.priceCard("Preço por peça sugerido", r.finalPrice, { label: `Total (${piecesLabel(r.quantity)})`, value: r.plateTotal });
-  else pdf.priceCard("Preço final sugerido", r.finalPrice);
+  if (plate) pdf.priceCard(t("Preço por peça sugerido"), r.finalPrice, { label: t("Total ({pecas})", { pecas: piecesLabel(r.quantity) }), value: r.plateTotal });
+  else pdf.priceCard(t("Preço final sugerido"), r.finalPrice);
   pdf.footer(storeSignature(settings));
 
   pdf.doc.save(`${exportFileBaseName(r)}.pdf`);
@@ -322,16 +324,16 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
     } catch { /* segue sem o logo */ }
   }
   font("bold", 15, INK);
-  doc.text(storeName || "Orçamento", textX, 23.5, { maxWidth: W - M - 60 - textX });
+  doc.text(storeName || t("Orçamento"), textX, 23.5, { maxWidth: W - M - 60 - textX });
   font("normal", 9.5, INK_3);
-  doc.text("Impressão 3D sob medida", textX, 29.5);
+  doc.text(t("Impressão 3D sob medida"), textX, 29.5);
 
   const right = W - M;
   font("bold", 7.5, VIOLET_DARK);
-  const tag = "ORÇAMENTO";
+  const tag = t("Orçamento").toUpperCase();
   doc.text(tag, right - doc.getTextWidth(tag) - 0.35 * (tag.length - 1), 22.5, { charSpace: 0.35 });
   font("normal", 9.5, INK_2);
-  doc.text(r.calculatedAt.toLocaleDateString("pt-BR", { dateStyle: "long" }), right, 28.5, { align: "right" });
+  doc.text(r.calculatedAt.toLocaleDateString(localeDatas(), { dateStyle: "long" }), right, 28.5, { align: "right" });
 
   doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
   doc.setLineWidth(0.25);
@@ -346,16 +348,16 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
     doc.text(lines, M, y + 6);
     y += 15 + 5 * (lines.length - 1);
   };
-  if (clientName) field("Cliente", clientName);
-  field("Peça", pdfText(r.jobName) || "Peça personalizada");
+  if (clientName) field(t("Cliente"), clientName);
+  field(t("Peça"), pdfText(t(r.jobName)) || t(DEFAULT_JOB_NAME));
   y -= 2; // 7mm do nome da peça até a foto ou a grade
 
   // ---- grade de detalhes (medida antes, pra saber quanto sobra pra foto)
-  const cells: { k: string; v: string }[] = [{ k: "Material", v: pdfText(r.materialName) }];
-  if (plate) cells.push({ k: "Quantidade", v: piecesLabel(r.quantity) });
+  const cells: { k: string; v: string }[] = [{ k: t("Material"), v: pdfText(r.materialName) }];
+  if (plate) cells.push({ k: t("Quantidade"), v: piecesLabel(r.quantity) });
   const delivery = pdfText(d.deliveryTime);
-  if (delivery) cells.push({ k: "Prazo de entrega", v: delivery });
-  if (d.validUntil) cells.push({ k: "Válido até", v: formatDate(d.validUntil) });
+  if (delivery) cells.push({ k: t("Prazo de entrega"), v: delivery });
+  if (d.validUntil) cells.push({ k: t("Válido até"), v: formatDate(d.validUntil) });
   const cellW = contentW / cells.length;
   font("bold", 11, INK);
   const cellLines = cells.map((c) => (doc.splitTextToSize(c.v, cellW - 10) as string[]).slice(0, 2));
@@ -402,7 +404,7 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
 
   // ---- observações, com fio violeta à esquerda
   if (notes) {
-    caption("Observações", M, y, VIOLET_DARK);
+    caption(t("Observações"), M, y, VIOLET_DARK);
     doc.setFillColor(VIOLET_LIGHT[0], VIOLET_LIGHT[1], VIOLET_LIGHT[2]);
     doc.rect(M, y + 3.2, 0.8, 5.2 * noteLines.length + 0.6, "F");
     font("normal", 10.5, INK_2);
@@ -416,12 +418,12 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
   doc.setLineWidth(0.6);
   doc.roundedRect(M, y, contentW, priceH - 6, 3, 3, "FD");
   doc.setLineWidth(0.25);
-  caption(plate ? "Valor total" : "Valor", M + 7, y + 8.5);
+  caption(plate ? t("Valor total") : t("Valor"), M + 7, y + 8.5);
   font("bold", 22, VIOLET_DARK);
   doc.text(brl(plate ? r.plateTotal : r.finalPrice), M + 7, y + 18);
   if (plate) {
     font("normal", 9, INK_3);
-    doc.text(`Valor por peça (${piecesLabel(r.quantity)})`, right - 7, y + 8.5, { align: "right" });
+    doc.text(t("Valor por peça ({pecas})", { pecas: piecesLabel(r.quantity) }), right - 7, y + 8.5, { align: "right" });
     font("bold", 13, INK);
     doc.text(brl(r.finalPrice), right - 7, y + 17.5, { align: "right" });
   }
@@ -436,9 +438,9 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
     fy += 4.2 * sigLines.length + 1;
   }
   font("normal", 7.5, INK_3);
-  doc.text(CREDIT, M, fy);
-  doc.link(M, fy - 3, doc.getTextWidth(CREDIT), 4, { url: CREDIT_URL });
+  doc.text(credit(), M, fy);
+  doc.link(M, fy - 3, doc.getTextWidth(credit()), 4, { url: CREDIT_URL });
 
   const who = d.clientName ? `-${slugify(d.clientName)}` : "";
-  doc.save(`orcamento-${slugify(r.jobName)}${who}-${r.calculatedAt.toISOString().slice(0, 10)}.pdf`);
+  doc.save(`${t("orcamento")}-${slugify(r.jobName)}${who}-${r.calculatedAt.toISOString().slice(0, 10)}.pdf`);
 }

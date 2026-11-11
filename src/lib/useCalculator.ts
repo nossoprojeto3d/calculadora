@@ -4,6 +4,7 @@
    resultado ao vivo (calc.ts) e "Meus orçamentos".
    ========================================================= */
 
+import { t, type Idioma } from "./i18n";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { PRO_COSTS, type ProCostId } from "./data";
 import {
@@ -16,7 +17,7 @@ import {
 
 export type Toast = { text: string; at: number } | null;
 
-export function useCalculator() {
+export function useCalculator(idioma: Idioma = "pt-BR") {
   const [settings, setSettings] = useState<StoreSettings>(() => loadStoreSettings());
   // a moeda vale para toda a formatação (tela, WhatsApp e PDF) a partir deste render
   usarMoeda(settings.currency);
@@ -52,11 +53,12 @@ export function useCalculator() {
     () => resolveDerived(state.values, state.mode, settings, state.shopeeTier, state.meliTier),
     [state.values, state.mode, settings, state.shopeeTier, state.meliTier],
   );
+  // idioma nas dependências: o resultado e os itens de progresso trazem textos traduzidos
   const validation = useMemo(() => validateAll(resolved, state.mode), [resolved, state.mode]);
   // Orçamento completo (todos os campos ligados preenchidos), igual à V3.
   const fullResult = useMemo(
     () => calculate(state.values, state.mode, settings, state.shopeeTier, state.meliTier),
-    [state.values, state.mode, settings, state.shopeeTier, state.meliTier],
+    [state.values, state.mode, settings, state.shopeeTier, state.meliTier, idioma],
   );
   // Custos PRO ligados mas ainda sem valor. Enquanto houver algum, o preço
   // continua na tela calculado sem eles (como se estivessem desligados), mas
@@ -71,9 +73,9 @@ export function useCalculator() {
     const values = { ...state.values };
     pendingPro.forEach((c) => { values[proToggleId(c.id)] = false; });
     return calculate(values, state.mode, settings, state.shopeeTier, state.meliTier);
-  }, [fullResult, pendingPro, state.values, state.mode, settings, state.shopeeTier, state.meliTier]);
+  }, [fullResult, pendingPro, state.values, state.mode, settings, state.shopeeTier, state.meliTier, idioma]);
   const complete = !!fullResult;
-  const progress = useMemo(() => getProgressItems(resolved, state.mode), [resolved, state.mode]);
+  const progress = useMemo(() => getProgressItems(resolved, state.mode), [resolved, state.mode, idioma]);
 
   const captureState = useCallback((): SavedFormState => {
     const values = { ...state.values };
@@ -100,15 +102,14 @@ export function useCalculator() {
     if (index >= 0) list[index] = entry; else list.unshift(entry);
     persistHistory(list);
     setBudgetId(id);
-    if (!silent) showToast(isNew ? "Salvo em Meus orçamentos." : "Orçamento atualizado.");
-  }, [result, complete, budgetId, captureState, persistHistory, showToast]);
+    if (!silent) showToast(isNew ? t("Salvo em Meus orçamentos.") : t("Orçamento atualizado."));
+  }, [result, complete, budgetId, captureState, persistHistory, showToast, idioma]);
 
   // orçamento já salvo: cada recálculo mantém o salvo atualizado
   useEffect(() => {
     if (!budgetId || !result || !complete || restoring.current) return;
-    const t = setTimeout(() => saveBudget({ silent: true }), 400);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const timer = setTimeout(() => saveBudget({ silent: true }), 400);
+    return () => clearTimeout(timer);
   }, [result]);
 
   const openBudget = useCallback((id: string) => {
@@ -119,8 +120,8 @@ export function useCalculator() {
     setBudgetId(entry.id);
     setProductPhoto(null);
     setTimeout(() => { restoring.current = false; }, 0);
-    showToast(`“${entry.name}” aberto. Edite à vontade.`);
-  }, [settings, showToast]);
+    showToast(t("“{nome}” aberto. Edite à vontade.", { nome: entry.name }));
+  }, [settings, showToast, idioma]);
 
   const deleteBudget = useCallback((id: string) => {
     persistHistory(loadHistory().filter((b) => b.id !== id));
@@ -182,8 +183,8 @@ export function useCalculator() {
     setProductPhoto(null);
     dispatch({ type: "example", settings });
     track("exemplo_usado");
-    showToast("Exemplo preenchido. Troque pelos dados da sua peça.");
-  }, [settings, showToast]);
+    showToast(t("Exemplo preenchido. Troque pelos dados da sua peça."));
+  }, [settings, showToast, idioma]);
 
   const updateSettings = useCallback((next: StoreSettings | null) => {
     if (next) {
