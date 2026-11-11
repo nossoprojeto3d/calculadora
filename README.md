@@ -24,7 +24,7 @@ npm run preview    # serve o dist/ em http://localhost:4173/calculadora/ (com a 
 ## Estrutura
 
 ```
-calc-3d/
+calculadora/
 ├── index.html              → casca da página
 ├── vite.config.ts          → build, CSP e app instalável (PWA)
 ├── src/

@@ -1,4 +1,4 @@
-# Calculadora 3D (calc-3d)
+# Calculadora 3D (pasta e repositório `calculadora`)
 
 Calculadora de preço para impressão 3D, publicada no GitHub Pages: https://nossoprojeto3d.com.br/calculadora/ (repositório `calculadora`; o antigo `/calc-3d/` redireciona pelo site principal)
 Todo push na `main` vai direto pro ar: o GitHub Actions (`.github/workflows/publicar.yml`) roda os testes do cálculo, gera o build e publica. Instalável como PWA.
