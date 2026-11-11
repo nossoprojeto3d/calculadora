@@ -4,6 +4,7 @@
    campos digitados ao voltar ou fechar (salvar a cada tecla preencheria o
    formulário com o valor pela metade, porque os padrões entram nos campos vazios). */
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { AnimatePresence, m, useReducedMotion, type Variants } from "motion/react";
 import {
   CalendarBlank, CaretLeft, CaretRight, Check, CircleHalf, CurrencyCircleDollar, DownloadSimple, Globe, ImageSquare,
   Lightning, Printer, Storefront, Timer, Trash, TrendUp, Warning,
@@ -17,6 +18,18 @@ import { InputField, Sheet, Switch } from "./ui";
 import type { Theme } from "../App";
 
 export type TelaConfig = "inicio" | "loja" | "impressora" | "kwh" | "lucro" | "valorHora" | "falha" | "validade" | "idioma" | "moeda" | "tema";
+
+// troca de tela "empurrando", como no iPhone: a subtela entra pela direita e,
+// ao voltar, a lista entra pela esquerda (d = 1 indo, -1 voltando)
+const DESLIZE = 48;
+const transicao: Variants = {
+  entra: (d: number) => ({ x: d * DESLIZE, opacity: 0 }),
+  parado: { x: 0, opacity: 1, transition: { type: "spring", stiffness: 320, damping: 34, opacity: { duration: 0.22 } } },
+  sai: (d: number) => ({ x: -d * DESLIZE, opacity: 0, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } }),
+};
+const transicaoSuave: Variants = {
+  entra: { opacity: 0 }, parado: { opacity: 1, transition: { duration: 0.2 } }, sai: { opacity: 0, transition: { duration: 0.12 } },
+};
 
 const limpar = (s: StoreSettings) =>
   Object.fromEntries(Object.entries(s).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])) as unknown as StoreSettings;
@@ -35,11 +48,17 @@ export function SettingsSheet({ calc, open, onOpenChange, inicio = "inicio", the
   const fileRef = useRef<HTMLInputElement>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const mudou = useRef(false);
+  const reduce = useReducedMotion();
+  const corpo = useRef<HTMLDivElement>(null);
+  const direcao = tela === "inicio" ? -1 : 1;
+  // o título acompanha a tela que está à vista (troca quando a anterior termina de sair)
+  const [titulo, setTitulo] = useState<TelaConfig>(inicio);
 
   useEffect(() => {
     if (!open) return;
     setDraft(calc.settings);
     setTela(inicio);
+    setTitulo(inicio);
     setLogoError(null);
     mudou.current = false;
     // só ao abrir: depois disso, o rascunho é a fonte enquanto a gaveta está aberta
@@ -222,7 +241,12 @@ export function SettingsSheet({ calc, open, onOpenChange, inicio = "inicio", the
   };
 
   return (
-    <Sheet open={open} onOpenChange={fechar} title={titulos[tela]}>
+    <Sheet open={open} onOpenChange={fechar} title={titulos[titulo]}>
+      <div ref={corpo} className="overflow-x-clip">
+      {/* a tela nova começa do topo da rolagem */}
+      <AnimatePresence mode="wait" initial={false} custom={direcao}
+        onExitComplete={() => { setTitulo(tela); corpo.current?.closest(".overflow-y-auto")?.scrollTo({ top: 0 }); }}>
+      <m.div key={tela} custom={direcao} variants={reduce ? transicaoSuave : transicao} initial="entra" animate="parado" exit="sai">
       {tela === "inicio" ? principal : (
         <div className="flex min-h-[55dvh] flex-col gap-4 lg:min-h-0">
           <button type="button" onClick={voltar}
@@ -232,6 +256,9 @@ export function SettingsSheet({ calc, open, onOpenChange, inicio = "inicio", the
           {subtelas[tela]}
         </div>
       )}
+      </m.div>
+      </AnimatePresence>
+      </div>
     </Sheet>
   );
 }
