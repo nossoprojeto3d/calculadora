@@ -4,7 +4,7 @@ import { t } from "../lib/i18n";
 /* Banner discreto de parceiro (link de afiliado), abaixo do orçamento.
    O clique é medido pelo medicao.js via data-evento (sem mexer no arquivo). */
 const VOOLT = {
-  url: "https://afiliado.c2cseller.com/voolt3d-nosso-projeto-b0e5828bb12818a1",
+  url: "https://afiliado.c2cseller.com/voolt3d-nosso-projeto-6cd02a0e9be16375",
   cupom: "NOSSOPROJETO",
 };
 
